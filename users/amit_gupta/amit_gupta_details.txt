@@ -1,0 +1,23 @@
+Applicant Details
+First Name: Amit
+Last Name: Gupta
+Gender: Male
+Email: amit_gupta@example.com
+Aadhar Number: 2494 1311 7097
+PAN Number: DSJZN6693Z
+Current Residential Address: H.No. 651, Narula Path, Varanasi 484617
+Current Residence Status: Owned
+Do you own any other properties?: Yes
+
+Financial & Employment Details
+Monthly Salary (INR): 95063
+Company Name: Pau LLC
+Existing EMI (if any, INR): 16078
+CIBIL Score: 776
+
+Property & Loan Details
+Loan Amount Requested (INR): 2332913
+Property Valuation (INR): 984467
+Full Property Address (for loan): 60/455, Subramaniam Nagar, Dhanbad-671751
+Is the property Non-Agricultural?: Yes
+Is there an existing mortgage on this property?: No

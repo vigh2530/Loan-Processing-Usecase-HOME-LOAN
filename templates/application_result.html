@@ -1,0 +1,117 @@
+{% extends "_base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-info text-white">
+            <h4 class="mb-0">Loan Application Analysis Result</h4>
+        </div>
+        <div class="card-body">
+            <!-- Status Card -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card {% if analysis.status == 'APPROVED' %}bg-success{% elif analysis.status == 'REJECTED' %}bg-danger{% else %}bg-warning{% endif %} text-white">
+                        <div class="card-body text-center">
+                            <h5>Application Status</h5>
+                            <h3>{{ analysis.status }}</h3>
+                            <p class="mb-0">Risk Level: {{ analysis.risk_level }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body text-center">
+                            <h5>Financial Health Score</h5>
+                            <h3>{{ analysis.financial_health_score }}/100</h3>
+                            <div class="progress mt-2" style="height: 20px;">
+                                <div class="progress-bar {% if (analysis.financial_health_score if analysis and analysis.financial_health_score is defined else 75) >= 80 %}bg-success{% elif (analysis.financial_health_score if analysis and analysis.financial_health_score is defined else 75) >= 60 %}bg-warning{% else %}bg-danger{% endif %}"style="width: {{ analysis.financial_health_score if analysis and analysis.financial_health_score is defined else 75 }}%">
+                                    {{ analysis.financial_health_score if analysis and analysis.financial_health_score is defined else 75 }}%
+</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Explanation -->
+            <div class="alert alert-info">
+                <h5>Analysis Summary</h5>
+                <p class="mb-0">{{ analysis.generated_explanation | replace('\n', '<br>') | safe }}</p>
+            </div>
+
+            <!-- Rejection Reasons -->
+            {% if analysis.rejection_reasons %}
+            <div class="mb-4">
+                <h5>Areas Needing Attention</h5>
+                {% for reason in analysis.rejection_reasons %}
+                <div class="card mb-2 border-danger">
+                    <div class="card-body py-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ reason.factor }}</strong> - {{ reason.description }}
+                            </div>
+                            <span class="badge {% if reason.severity == 'Critical' %}bg-danger{% elif reason.severity == 'High' %}bg-warning{% else %}bg-info{% endif %}">
+                                {{ reason.severity }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Recommendations -->
+            {% if analysis.recommendations %}
+            <div class="mb-4">
+                <h5>Recommendations</h5>
+                {% for rec in analysis.recommendations %}
+                <div class="card mb-2 border-success">
+                    <div class="card-body py-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ rec.action }}</strong> - {{ rec.description }}
+                            </div>
+                            <span class="badge {% if rec.priority == 'High' %}bg-danger{% elif rec.priority == 'Medium' %}bg-warning{% else %}bg-success{% endif %}">
+                                {{ rec.priority }}
+                            </span>
+                        </div>
+                        <small class="text-muted">Timeline: {{ rec.timeline }}</small>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Alternative Offers -->
+            {% if analysis.alternative_offers %}
+            <div class="mb-4">
+                <h5>Alternative Loan Options</h5>
+                <div class="row">
+                    {% for offer in analysis.alternative_offers %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-primary">
+                            <div class="card-header bg-primary text-white">
+                                <h6 class="mb-0">{{ offer.type }}</h6>
+                            </div>
+                            <div class="card-body">
+                                <p class="mb-1"><strong>Amount:</strong> ₹{{ "{:,.0f}".format(offer.amount) }}</p>
+                                {% if offer.tenure %}<p class="mb-1"><strong>Tenure:</strong> {{ offer.tenure }}</p>{% endif %}
+                                {% if offer.emi %}<p class="mb-1"><strong>EMI:</strong> ₹{{ "{:,.0f}".format(offer.emi) }}</p>{% endif %}
+                                {% if offer.interest_rate %}<p class="mb-1"><strong>Interest Rate:</strong> {{ offer.interest_rate }}</p>{% endif %}
+                                <p class="mb-0 text-muted"><small>{{ offer.reason }}</small></p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="text-center mt-4">
+                <a href="{{ url_for('apply') }}" class="btn btn-primary">Submit New Application</a>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

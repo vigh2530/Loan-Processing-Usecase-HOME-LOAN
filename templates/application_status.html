@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Application Status - {{ application.id }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .risk-low { color: #28a745; }
+        .risk-medium { color: #ffc107; }
+        .risk-high { color: #dc3545; }
+        .risk-very-high { color: #721c24; }
+        .status-card { border-left: 4px solid #007bff; }
+        .verification-card { border-left: 4px solid #17a2b8; }
+        .document-card { border-left: 4px solid #28a745; }
+        .analysis-card { border-left: 4px solid #6f42c1; }
+        .progress { background-color: #e9ecef; }
+        .fix-btn { font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+    <div class="container-fluid py-4">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h3 mb-1">Application Details</h1>
+                <p class="text-muted">Application #{{ application.id }}</p>
+            </div>
+            <div>
+                <span class="badge bg-info fs-6 me-2">KYC: {{ application.kyc_status or 'PENDING' }}</span>
+                <span class="badge bg-primary fs-6">Status: {{ application.status }}</span>
+            </div>
+        </div>
+
+        <!-- Fix Old Application Button -->
+        {% if application.overall_risk_score is none or application.employment_verification_status is none %}
+        <div class="alert alert-warning d-flex justify-content-between align-items-center">
+            <div>
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                This application needs to be updated with new verification data.
+            </div>
+            <a href="{{ url_for('fix_application', app_id=application.id) }}" class="btn btn-warning btn-sm fix-btn">
+                <i class="fas fa-sync-alt me-1"></i> Update Verification Data
+            </a>
+        </div>
+        {% endif %}
+
+        <div class="row">
+            <!-- Left Column - Main Content -->
+            <div class="col-lg-8">
+                <!-- Applicant & Financial Details -->
+                <div class="card status-card mb-4">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-user-circle me-2"></i>Applicant & Financial Details</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Name:</strong> {{ application.first_name }} {{ application.last_name }}</p>
+                                <p><strong>Email:</strong> {{ application.email }}</p>
+                                <p><strong>PAN:</strong> {{ application.pan_number }}</p>
+                                <p><strong>Current Address:</strong> {{ application.current_address }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Aadhar:</strong> {{ application.aadhar_number }}</p>
+                                <p><strong>Residence:</strong> {% if application.is_rented %}Rented{% else %}Owned{% endif %}</p>
+                                <p><strong>Owns other property:</strong> {% if application.has_own_property %}Yes{% else %}No{% endif %}</p>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Monthly Salary:</strong> 
+                                    {% if application.monthly_salary is not none %}
+                                        ₹{{ "{:,.2f}".format(application.monthly_salary) }}
+                                    {% else %}
+                                        <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </p>
+                                <p><strong>CIBIL Score:</strong> 
+                                    {% if application.cibil_score is not none %}
+                                        {{ application.cibil_score }}
+                                    {% else %}
+                                        <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Loan Amount:</strong> 
+                                    {% if application.loan_amount is not none %}
+                                        ₹{{ "{:,.2f}".format(application.loan_amount) }}
+                                    {% else %}
+                                        <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </p>
+                                <p><strong>Property Valuation:</strong> 
+                                    {% if application.property_valuation is not none %}
+                                        ₹{{ "{:,.2f}".format(application.property_valuation) }}
+                                    {% else %}
+                                        <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Enhanced Verification Section -->
+                <div class="card verification-card mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-search me-2"></i>
+                            {% if application.overall_risk_score is not none %}
+                                AI Verification
+                            {% else %}
+                                Enhanced Verification
+                            {% endif %}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Employment Verification:</strong> 
+                                    <span class="badge {% if application.employment_verification_status == 'VERIFIED' %}bg-success{% elif application.employment_verification_status == 'VERIFIED_WITH_NOTES' %}bg-warning{% else %}bg-warning{% endif %}">
+                                        {{ application.employment_verification_status or 'PENDING' }}
+                                    </span>
+                                </p>
+                                <p><strong>Document Verification:</strong> 
+                                    <span class="badge {% if application.document_verification_status == 'VERIFIED' %}bg-success{% else %}bg-warning{% endif %}">
+                                        {{ application.document_verification_status or 'PENDING' }}
+                                    </span>
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Overall Risk Score:</strong> 
+                                    {% set risk_score = application.overall_risk_score %}
+                                    {% if risk_score is not none %}
+                                        <span class="{% if risk_score <= 25 %}text-success{% elif risk_score <= 50 %}text-warning{% elif risk_score <= 75 %}text-danger{% else %}text-dark{% endif %}">
+                                            {{ "%.1f"|format(risk_score) }}/100
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">N/A - Analysis Pending</span>
+                                    {% endif %}
+                                </p>
+                                
+                                <!-- Show verification details if available -->
+                                {% if verification_summary and verification_summary.summary %}
+                                <p><strong>Risk Level:</strong> 
+                                    <span class="badge {% if verification_summary.summary.risk_level == 'LOW' %}bg-success{% elif verification_summary.summary.risk_level == 'MEDIUM' %}bg-warning{% elif verification_summary.summary.risk_level == 'HIGH' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                        {{ verification_summary.summary.risk_level or 'UNKNOWN' }}
+                                    </span>
+                                </p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Show processing status -->
+                        {% if application.overall_risk_score is none %}
+                        <div class="alert alert-info mt-3">
+                            <div class="d-flex align-items-center">
+                                <div class="spinner-border spinner-border-sm me-2" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <span>Verification data being processed...</span>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="text-center mt-3">
+                            {% if application.overall_risk_score is not none %}
+                            <a href="{{ url_for('verification_report', app_id=application.id) }}" 
+                                class="btn btn-primary">
+                                <i class="fas fa-file-alt me-2"></i>View Detailed Verification Report
+                            </a>
+                            {% else %}
+                            <a href="{{ url_for('fix_application', app_id=application.id) }}" 
+                                class="btn btn-warning">
+                                <i class="fas fa-sync-alt me-2"></i>Process Verification Data
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Application Status Guidance -->
+                {% if application.status == 'PENDING' %}
+                <div class="card mb-4 border-warning">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Application Status: PROCESSING</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>Your application is being processed by our AI system.</p>
+                        {% if application.overall_risk_score is none %}
+                        <div class="progress mb-3">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 70%">Processing...</div>
+                        </div>
+                        <p class="mb-0">Click "Process Verification Data" above to complete AI analysis.</p>
+                        {% else %}
+                        <p class="mb-0"><strong>AI Analysis Complete:</strong> Risk score calculated</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% elif application.status == 'APPROVED' %}
+                <!-- Loan Approval Section -->
+                <div class="card mb-4 border-success">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="fas fa-check-circle me-2"></i> 🎉 INSTANTLY APPROVED!</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <p class="fs-5">Congratulations! Your loan has been <strong>instantly approved</strong> by our AI system.</p>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p><strong>Loan Amount:</strong> ₹{{ "{:,.2f}".format(application.loan_amount) }}</p>
+                                        <p><strong>Interest Rate:</strong> {{ application.interest_rate }}% p.a.</p>
+                                        <p><strong>Term:</strong> {{ application.loan_term_years }} years</p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p><strong>Monthly EMI:</strong> ₹{{ "{:,.2f}".format(application.emi_amount) }}</p>
+                                        <p><strong>Total Interest:</strong> ₹{{ "{:,.2f}".format(application.emi_amount * application.loan_term_years * 12 - application.loan_amount) }}</p>
+                                        <p><strong>Total Payment:</strong> ₹{{ "{:,.2f}".format(application.emi_amount * application.loan_term_years * 12) }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 text-center">
+                                <div class="bg-light p-3 rounded">
+                                    <h4 class="text-success">₹{{ "{:,.2f}".format(application.emi_amount) }}</h4>
+                                    <p class="mb-2"><strong>Monthly EMI</strong></p>
+                                    <a href="{{ url_for('generate_loan_document', app_id=application.id) }}" class="btn btn-success btn-lg w-100">
+                                        <i class="fas fa-download me-2"></i> Get Loan Agreement
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Quick Actions -->
+                        <div class="mt-4">
+                            <div class="row">
+                                <div class="col-md-4 text-center">
+                                    <i class="fas fa-file-contract fa-2x text-primary mb-2"></i>
+                                    <p><small>Download your loan agreement</small></p>
+                                </div>
+                                <div class="col-md-4 text-center">
+                                    <i class="fas fa-calendar-alt fa-2x text-info mb-2"></i>
+                                    <p><small>View repayment schedule</small></p>
+                                </div>
+                                <div class="col-md-4 text-center">
+                                    <i class="fas fa-question-circle fa-2x text-secondary mb-2"></i>
+                                    <p><small>Need help? Contact support</small></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% elif application.status == 'REJECTED' %}
+                <div class="card mb-4 border-danger">
+                    <div class="card-header bg-danger text-white">
+                        <h5 class="mb-0"><i class="fas fa-times-circle me-2"></i> Decision: Not Approved</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>After careful analysis, we're unable to approve your application at this time.</p>
+                        <p class="mb-0">You may reapply after 30 days or contact customer support for more details.</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Right Column - AI Analysis & Verification -->
+            <div class="col-lg-4">
+                <h4 class="mb-3">AI Analysis & Verification</h4>
+
+                <!-- Credit Risk Score -->
+                <div class="card analysis-card mb-3">
+                    <div class="card-header bg-white">
+                        <strong><i class="fas fa-chart-line me-2"></i>Credit Risk Score</strong>
+                    </div>
+                    <div class="card-body text-center">
+                        {% set credit_risk_score = credit_report.get('risk_score', 0) | int %}
+                        {% set credit_risk_level = credit_report.get('risk_level', 'N/A') %}
+                        <h5 class="card-title {% if credit_risk_score < 50 %}text-danger{% elif credit_risk_score < 75 %}text-warning{% else %}text-success{% endif %}">
+                            {{ credit_risk_level }} Risk
+                        </h5>
+                        <div class="progress mb-2" style="height: 25px;">
+                            <div class="progress-bar {% if credit_risk_score < 50 %}bg-danger{% elif credit_risk_score < 75 %}bg-warning{% else %}bg-success{% endif %}"style="width: {{ credit_risk_score }}%" 
+                                role="progressbar" 
+                                aria-valuenow="{{ credit_risk_score }}" 
+                                aria-valuemin="0" 
+                                aria-valuemax="100">
+                                {{ credit_risk_score }} / 100
+                            </div>
+                        </div>
+                        <p class="card-text mt-3 mb-0">
+                            <small>
+                                {% if credit_report.get('key_factors') %}
+                                    {% if credit_report.get('key_factors').get('credit_quality') == 'EXCELLENT' %}Excellent credit history
+                                    {% elif credit_report.get('key_factors').get('credit_quality') == 'GOOD' %}Good credit profile
+                                    {% else %}Credit review completed{% endif %}
+                                {% else %}
+                                    Credit analysis completed
+                                {% endif %}
+                            </small>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Employment Verification -->
+                <div class="card analysis-card mb-3">
+                    <div class="card-header bg-white">
+                        <strong><i class="fas fa-briefcase me-2"></i>Employment Verification</strong>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title {% if application.employment_verification_status == 'VERIFIED' %}text-success{% elif application.employment_verification_status == 'VERIFIED_WITH_NOTES' %}text-warning{% else %}text-warning{% endif %}">
+                            {{ application.employment_verification_status or 'PROCESSED' }}
+                        </h5>
+                        {% if employment_report and employment_report.get('data_source') %}
+                            <p class="card-text mb-1">
+                                <small>
+                                    <i class="fas fa-database me-1"></i>
+                                    {% if employment_report.get('data_source_match') %}
+                                        ✅ Verified with company database
+                                    {% else %}
+                                        🔍 Verified through AI analysis
+                                    {% endif %}
+                                </small>
+                            </p>
+                        {% endif %}
+                        {% if employment_report and employment_report.get('green_flags') %}
+                            <p class="card-text mb-0">
+                                <small class="text-success">
+                                    <i class="fas fa-check-circle me-1"></i>
+                                    {{ employment_report.get('green_flags')[0] }}
+                                </small>
+                            </p>
+                        {% else %}
+                            <p class="card-text mb-0">
+                                <small>Employment verification completed</small>
+                            </p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Banking Behavior Analysis -->
+                <div class="card analysis-card mb-3">
+                    <div class="card-header bg-white">
+                        <strong><i class="fas fa-university me-2"></i>Banking Behavior Analysis</strong>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title {% if banking_report.get('status') == 'HEALTHY' %}text-success{% else %}text-warning{% endif %}">
+                            {{ banking_report.get('status', 'HEALTHY') }}
+                        </h5>
+                        <p class="card-text mb-0">
+                            <small>
+                                {% if banking_report.get('debt_service_ratio') %}
+                                    Debt-to-income: {{ "%.1f"|format(banking_report.get('debt_service_ratio')) }}%
+                                {% else %}
+                                    {% set dti_ratio = (application.existing_emi / application.monthly_salary * 100) if application.monthly_salary and application.monthly_salary > 0 else 0 %}
+                                    Debt-to-income: {{ "%.1f"|format(dti_ratio) }}%
+                                {% endif %}
+                            </small>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Fraud Detection Report -->
+                <div class="card analysis-card mb-3">
+                    <div class="card-header bg-white">
+                        <strong><i class="fas fa-shield-alt me-2"></i>Fraud Detection Report</strong>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title {% if fraud_report.get('status') == 'LOW_RISK' %}text-success{% else %}text-warning{% endif %}">
+                            {{ fraud_report.get('status', 'LOW_RISK') }}
+                        </h5>
+                        <p class="card-text mb-0">
+                            <small>
+                                {% if fraud_report.get('risk_score') %}
+                                    Risk score: {{ "%.1f"|format(fraud_report.get('risk_score')) }}/100
+                                {% else %}
+                                    Low risk profile detected
+                                {% endif %}
+                            </small>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Instant Approval Info -->
+                <div class="card analysis-card mb-3 border-success">
+                    <div class="card-header bg-success text-white">
+                        <strong><i class="fas fa-bolt me-2"></i>Instant Approval</strong>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text mb-2">
+                            <small>
+                                <i class="fas fa-robot me-1"></i>
+                                <strong>AI Processed:</strong> Instant decision
+                            </small>
+                        </p>
+                        <p class="card-text mb-2">
+                            <small>
+                                <i class="fas fa-clock me-1"></i>
+                                <strong>Processing Time:</strong> &lt; 5 seconds
+                            </small>
+                        </p>
+                        <p class="card-text mb-0">
+                            <small>
+                                <i class="fas fa-chart-line me-1"></i>
+                                <strong>Risk Level:</strong> VERY LOW
+                            </small>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Uploaded Documents -->
+                <div class="card document-card">
+                    <div class="card-header bg-white">
+                        <strong><i class="fas fa-file-alt me-2"></i>Uploaded Documents</strong>
+                    </div>
+                    <ul class="list-group list-group-flush">
+                        {% if application.documents %}
+                            {% for doc in application.documents %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <a href="{{ url_for('view_document', doc_id=doc.id) }}" target="_blank" class="text-decoration-none">
+                                        <i class="fas fa-file-pdf me-2 text-danger"></i>
+                                        {{ doc.document_type|replace('_', ' ')|title }}
+                                    </a>
+                                    <span class="badge bg-primary rounded-pill">View</span>
+                                </li>
+                            {% endfor %}
+                        {% else %}
+                            <li class="list-group-item text-muted text-center py-3">
+                                <i class="fas fa-folder-open fa-2x mb-2"></i><br>
+                                No documents uploaded yet
+                            </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

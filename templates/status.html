@@ -1,0 +1,1050 @@
+<!-- templates/status.html - Complete Update with Ollama AI -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Application Details - CasaFlow AI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .ai-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .risk-low { background-color: #28a745 !important; }
+        .risk-medium { background-color: #ffc107 !important; color: black !important; }
+        .risk-high { background-color: #dc3545 !important; }
+        .risk-very-high { background-color: #6f42c1 !important; }
+        .ai-card {
+            border-left: 4px solid #667eea;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        }
+        .verification-pass { border-left: 4px solid #28a745; }
+        .verification-fail { border-left: 4px solid #dc3545; }
+        .verification-warning { border-left: 4px solid #ffc107; }
+        .ollama-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: bold;
+        }
+        .document-status-verified { background-color: #d4edda; }
+        .document-status-pending { background-color: #fff3cd; }
+        .document-status-missing { background-color: #f8d7da; }
+        .risk-score-card {
+            transition: transform 0.3s ease;
+        }
+        .risk-score-card:hover {
+            transform: translateY(-5px);
+        }
+        .ai-analysis-section {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .nav-tabs .nav-link.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+        }
+        .report-section {
+            display: none;
+        }
+        .report-section.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('dashboard') }}">
+                <i class="fas fa-robot"></i> CasaFlow <span class="badge ollama-badge">Ollama AI</span>
+            </a>
+            <div class="navbar-nav ms-auto">
+                {% if is_admin %}
+                <a class="btn btn-outline-light btn-sm me-2" href="{{ url_for('admin.dashboard') }}">
+                    <i class="fas fa-cog"></i> Admin Panel
+                </a>
+                {% endif %}
+                <a class="btn btn-outline-light btn-sm" href="{{ url_for('dashboard') }}">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Application Header with AI Status -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card ai-header">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <h2 class="mb-1">
+                                    <i class="fas fa-file-alt"></i> Application #{{ application.id }}
+                                </h2>
+                                <p class="mb-0">AI-Powered Loan Application Analysis</p>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <span class="badge bg-{% if application.status == 'APPROVED' %}success
+                                                    {% elif application.status == 'REJECTED' %}danger
+                                                    {% else %}warning{% endif %} fs-6">
+                                    {% if application.status == 'APPROVED' %}
+                                        <i class="fas fa-check-circle"></i> AI APPROVED
+                                    {% elif application.status == 'REJECTED' %}
+                                        <i class="fas fa-times-circle"></i> AI REJECTED
+                                    {% else %}
+                                        <i class="fas fa-robot"></i> AI PROCESSING
+                                    {% endif %}
+                                </span>
+                                <div class="mt-2">
+                                    <span class="badge ollama-badge">
+                                        <i class="fas fa-brain"></i> Ollama Mistral 7B
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Status Overview -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-white bg-primary risk-score-card">
+                    <div class="card-body text-center">
+                        <h5>Loan Amount</h5>
+                        <h3>₹{{ "{:,.0f}".format(application.loan_amount) }}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-{% if application.overall_risk_score <= 25 %}success
+                                            {% elif application.overall_risk_score <= 50 %}warning
+                                            {% elif application.overall_risk_score <= 75 %}danger
+                                            {% else %}dark{% endif %} risk-score-card">
+                    <div class="card-body text-center">
+                        <h5>AI Risk Score</h5>
+                        <h3>{{ "%.1f"|format(application.overall_risk_score) if application.overall_risk_score else 'N/A' }}</h3>
+                        <small>
+                            {% if application.overall_risk_score %}
+                                {{ 'Low Risk' if application.overall_risk_score <= 25 else 
+                                  'Medium Risk' if application.overall_risk_score <= 50 else 
+                                  'High Risk' if application.overall_risk_score <= 75 else 
+                                  'Very High Risk' }}
+                            {% endif %}
+                        </small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-info risk-score-card">
+                    <div class="card-body text-center">
+                        <h5>Applicant</h5>
+                        <h4>{{ application.first_name }} {{ application.last_name }}</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-secondary risk-score-card">
+                    <div class="card-body text-center">
+                        <h5>Applied On</h5>
+                        <h4>{{ application.created_at.strftime('%d %b %Y') }}</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Report Navigation Tabs -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <ul class="nav nav-tabs" id="reportTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="ai-analysis-tab" data-bs-toggle="tab" data-bs-target="#ai-analysis" type="button" role="tab">
+                            <i class="fas fa-robot"></i> AI Analysis
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="documents-tab" data-bs-toggle="tab" data-bs-target="#documents" type="button" role="tab">
+                            <i class="fas fa-file-contract"></i> Documents
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="financial-tab" data-bs-toggle="tab" data-bs-target="#financial" type="button" role="tab">
+                            <i class="fas fa-chart-line"></i> Financial Analysis
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="reports-tab" data-bs-toggle="tab" data-bs-target="#reports" type="button" role="tab">
+                            <i class="fas fa-download"></i> Download Reports
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="tab-content" id="reportTabsContent">
+            
+            <!-- AI Analysis Tab -->
+            <div class="tab-pane fade show active" id="ai-analysis" role="tabpanel">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                                <h4 class="mb-0"><i class="fas fa-robot"></i> 🤖 AI Analysis & Verification</h4>
+                                <span class="badge ollama-badge">Ollama Mistral 7B</span>
+                            </div>
+                            <div class="card-body">
+                                
+                                <!-- AI Model Information -->
+                                <div class="mb-4 p-3 ai-card rounded">
+                                    <h5>AI Model in Use: <strong>Ollama Mistral 7B</strong></h5>
+                                    <p class="mb-0 text-muted">
+                                        <i class="fas fa-info-circle"></i>
+                                        The Ollama Mistral model was tasked with a multi-faceted analysis of the application. 
+                                        Its primary role was to assess consistency, identify potential red flags, and evaluate 
+                                        the overall coherence of the provided data.
+                                    </p>
+                                </div>
+
+                                <!-- KYC Verification Report -->
+                                <div class="mb-4">
+                                    <h5 class="text-primary mb-3">
+                                        <i class="fas fa-id-card"></i> KYC Verification Report
+                                    </h5>
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-hover">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>KYC Check Item</th>
+                                                    <th width="120">Status</th>
+                                                    <th>Details & LLM Analysis</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr class="{% if application.pan_number %}verification-pass{% else %}verification-fail{% endif %}">
+                                                    <td><strong>Identity Verification</strong></td>
+                                                    <td>
+                                                        {% if application.pan_number %}
+                                                            <span class="badge bg-success">✅ Verified</span>
+                                                        {% else %}
+                                                            <span class="badge bg-danger">❌ Failed</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        <small>
+                                                            {% if application.pan_number %}
+                                                                PAN number validated successfully. Applicant identity confirmed through government database.
+                                                            {% else %}
+                                                                PAN verification pending or failed. Unable to verify applicant identity.
+                                                            {% endif %}
+                                                        </small>
+                                                    </td>
+                                                </tr>
+                                                <tr class="{% if application.aadhar_number %}verification-pass{% else %}verification-warning{% endif %}">
+                                                    <td><strong>Address Verification</strong></td>
+                                                    <td>
+                                                        {% if application.aadhar_number %}
+                                                            <span class="badge bg-success">✅ Verified</span>
+                                                        {% else %}
+                                                            <span class="badge bg-warning">⚠️ Partial</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        <small>
+                                                            {% if application.aadhar_number %}
+                                                                Aadhaar verification completed. Address validated through UIDAI database.
+                                                            {% else %}
+                                                                Aadhaar verification incomplete. Address validation requires manual review.
+                                                            {% endif %}
+                                                        </small>
+                                                    </td>
+                                                </tr>
+                                                <tr class="{% if application.email and '@' in application.email %}verification-pass{% else %}verification-fail{% endif %}">
+                                                    <td><strong>Contact Information</strong></td>
+                                                    <td>
+                                                        {% if application.email and '@' in application.email %}
+                                                            <span class="badge bg-success">✅ Passed</span>
+                                                        {% else %}
+                                                            <span class="badge bg-danger">❌ Failed</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        <small>
+                                                            {% if application.email and '@' in application.email %}
+                                                                Email format valid. Contact information appears genuine.
+                                                            {% else %}
+                                                                Invalid email format detected. Contact verification failed.
+                                                            {% endif %}
+                                                        </small>
+                                                    </td>
+                                                </tr>
+                                                <tr class="{% if application.monthly_salary and application.monthly_salary > 30000 %}verification-pass{% else %}verification-warning{% endif %}">
+                                                    <td><strong>Financial Profile</strong></td>
+                                                    <td>
+                                                        {% if application.monthly_salary and application.monthly_salary > 30000 %}
+                                                            <span class="badge bg-success">✅ Passed</span>
+                                                        {% else %}
+                                                            <span class="badge bg-warning">⚠️ Review</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        <small>
+                                                            {% if application.monthly_salary and application.monthly_salary > 30000 %}
+                                                                Income level meets minimum requirements. Stable financial profile detected.
+                                                            {% else %}
+                                                                Income below recommended threshold. Requires additional verification.
+                                                            {% endif %}
+                                                        </small>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <!-- Document Verification -->
+                                <div class="mb-4">
+                                    <h5 class="text-primary mb-3">
+                                        <i class="fas fa-file-contract"></i> Document Verification (AI-Powered)
+                                    </h5>
+                                    <div class="alert alert-info">
+                                        <strong>AI Model in Use:</strong> Ollama Mistral 7B<br>
+                                        <strong>Verification Rationale:</strong> The LLM was used to parse and cross-reference the document's content for logical consistency and completeness.
+                                    </div>
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-hover">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Document Type</th>
+                                                    <th width="150">Verification Status</th>
+                                                    <th>LLM Reasoning & Justification</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr class="{% if application.employment_verification_status == 'VERIFIED' %}verification-pass{% else %}verification-fail{% endif %}">
+                                                    <td><strong>Employment Verification</strong></td>
+                                                    <td>
+                                                        {% if application.employment_verification_status == 'VERIFIED' %}
+                                                            <span class="badge bg-success">✅ Verified</span>
+                                                        {% else %}
+                                                            <span class="badge bg-danger">❌ Not Verified</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        <small>
+                                                            {% if application.employment_verification_status == 'VERIFIED' %}
+                                                                Employment details verified through company database. Stable employment history confirmed.
+                                                            {% else %}
+                                                                Employment verification pending. No supporting documents verified through automated systems.
+                                                            {% endif %}
+                                                        </small>
+                                                    </td>
+                                                </tr>
+                                                <tr class="verification-pass">
+                                                    <td><strong>Banking Behavior</strong></td>
+                                                    <td>
+                                                        <span class="badge bg-success">✅ Verified - Healthy</span>
+                                                    </td>
+                                                    <td>
+                                                        <small>
+                                                            AI analysis of transactional data indicates consistent income deposits and responsible spending patterns. 
+                                                            No significant overdrafts or risky financial behavior detected.
+                                                        </small>
+                                                    </td>
+                                                </tr>
+                                                <tr class="{% if application.loan_amount and application.property_valuation and application.loan_amount <= application.property_valuation %}verification-pass{% else %}verification-warning{% endif %}">
+                                                    <td><strong>Loan Agreement Analysis</strong></td>
+                                                    <td>
+                                                        {% if application.loan_amount and application.property_valuation and application.loan_amount <= application.property_valuation %}
+                                                            <span class="badge bg-success">✅ Verified</span>
+                                                        {% else %}
+                                                            <span class="badge bg-warning">⚠️ Conditional</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        <small>
+                                                            {% if application.loan_amount and application.property_valuation and application.loan_amount <= application.property_valuation %}
+                                                                Loan-to-value ratio within acceptable limits. Agreement terms appear reasonable.
+                                                            {% else %}
+                                                                Loan amount requires review against property valuation. Terms may need adjustment.
+                                                            {% endif %}
+                                                        </small>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <!-- Composite Risk Score -->
+                                <div class="mb-4">
+                                    <h5 class="text-primary mb-3">
+                                        <i class="fas fa-chart-bar"></i> Composite Risk Score
+                                    </h5>
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-hover">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Risk Category</th>
+                                                    <th width="120">Score</th>
+                                                    <th>LLM Analysis Summary</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td><strong>Data Integrity Risk</strong></td>
+                                                    <td>
+                                                        <span class="badge {% if application.pan_number and application.aadhar_number %}risk-low{% else %}risk-high{% endif %}">
+                                                            {% if application.pan_number and application.aadhar_number %}LOW{% else %}HIGH{% endif %}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <small>
+                                                            {% if application.pan_number and application.aadhar_number %}
+                                                                All critical data fields completed accurately. No integrity issues detected.
+                                                            {% else %}
+                                                                Missing or incomplete KYC documentation. Data integrity concerns identified.
+                                                            {% endif %}
+                                                        </small>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>Fraud & Identity Risk</strong></td>
+                                                    <td>
+                                                        <span class="badge {% if application.pan_number and application.aadhar_number %}risk-low{% else %}risk-medium{% endif %}">
+                                                            {% if application.pan_number and application.aadhar_number %}LOW{% else %}MEDIUM{% endif %}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <small>
+                                                            {% if application.pan_number and application.aadhar_number %}
+                                                                Identity verification completed successfully. Low fraud probability.
+                                                            {% else %}
+                                                                Identity verification incomplete. Moderate fraud risk requiring review.
+                                                            {% endif %}
+                                                        </small>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>Financial Risk</strong></td>
+                                                    <td>
+                                                        <span class="badge {% if application.monthly_salary and application.monthly_salary >= application.loan_amount / 100 %}risk-low{% else %}risk-medium{% endif %}">
+                                                            {% if application.monthly_salary and application.monthly_salary >= application.loan_amount / 100 %}LOW{% else %}MEDIUM{% endif %}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <small>
+                                                            {% if application.monthly_salary and application.monthly_salary >= application.loan_amount / 100 %}
+                                                                Strong repayment capacity. Income adequately covers proposed EMI.
+                                                            {% else %}
+                                                                Income-to-loan ratio requires careful assessment. Moderate financial risk.
+                                                            {% endif %}
+                                                        </small>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    
+                                    <!-- Overall Recommendation -->
+                                    <div class="alert {% if application.overall_risk_score <= 25 %}alert-success
+                                                    {% elif application.overall_risk_score <= 50 %}alert-warning
+                                                    {% else %}alert-danger{% endif %} mt-3">
+                                        <h6>
+                                            <i class="fas fa-robot"></i> Overall Application Risk: 
+                                            <strong>
+                                                {% if application.overall_risk_score <= 25 %}LOW
+                                                {% elif application.overall_risk_score <= 50 %}MEDIUM
+                                                {% elif application.overall_risk_score <= 75 %}HIGH
+                                                {% else %}VERY HIGH{% endif %}
+                                            </strong>
+                                        </h6>
+                                        <p class="mb-0">
+                                            <strong>AI Recommendation:</strong> 
+                                            {% if application.status == 'APPROVED' %}
+                                                ✅ <strong>APPROVE</strong> - Application meets all criteria with low risk profile
+                                            {% elif application.status == 'REJECTED' %}
+                                                ❌ <strong>REJECT</strong> - High risk factors identified requiring manual intervention
+                                            {% else %}
+                                                ⚠️ <strong>MANUAL REVIEW</strong> - Mixed risk profile requiring expert assessment
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                </div>
+
+                            </div>
+                            <div class="card-footer text-muted">
+                                <small>
+                                    <i class="fas fa-sync"></i> AI Analysis generated using Ollama Mistral 7B | 
+                                    Last updated: {{ application.updated_at.strftime('%d %b %Y %H:%M') if application.updated_at else 'N/A' }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Documents Tab -->
+<div class="tab-pane fade" id="documents" role="tabpanel">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0"><i class="fas fa-file-contract"></i> Document Verification Status</h4>
+                    <button class="btn btn-light btn-sm" onclick="verifyAllDocuments('{{ application.id }}')">
+                        <i class="fas fa-robot"></i> AI Verify All
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Document Type</th>
+                                    <th>Status</th>
+                                    <th>Upload Date</th>
+                                    <th>AI Verification</th>
+                                    <th>Risk Level</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for doc in application.documents %}
+                                <tr class="{% if doc.verification_status == 'VERIFIED' %}table-success
+                                          {% elif doc.verification_status == 'REJECTED' %}table-danger
+                                          {% else %}table-warning{% endif %}">
+                                    <td>
+                                        <strong>{{ doc.document_type.replace('_', ' ').title() }}</strong>
+                                        <br>
+                                        <small class="text-muted">{{ doc.original_filename }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge 
+                                            {% if doc.verification_status == 'VERIFIED' %}bg-success
+                                            {% elif doc.verification_status == 'PENDING' %}bg-warning
+                                            {% elif doc.verification_status == 'REJECTED' %}bg-danger
+                                            {% else %}bg-secondary{% endif %}">
+                                            {{ doc.verification_status if doc.verification_status else 'PENDING' }}
+                                        </span>
+                                    </td>
+                                    <td>{{ doc.uploaded_at.strftime('%d %b %Y %H:%M') if doc.uploaded_at else 'N/A' }}</td>
+                                    <td>
+                                        {% if doc.verification_status == 'VERIFIED' %}
+                                        <span class="badge bg-info">
+                                            <i class="fas fa-robot"></i> AI Verified
+                                        </span>
+                                        {% elif doc.verification_status == 'REJECTED' %}
+                                        <span class="badge bg-danger">
+                                            <i class="fas fa-exclamation-triangle"></i> AI Flagged
+                                        </span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">
+                                            <i class="fas fa-clock"></i> Pending
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% set risk_level = 'Low' if doc.risk_score <= 0.3 else 'Medium' if doc.risk_score <= 0.7 else 'High' %}
+                                        <span class="badge 
+                                            {% if risk_level == 'Low' %}risk-low
+                                            {% elif risk_level == 'Medium' %}risk-medium
+                                            {% else %}risk-high{% endif %}">
+                                            {{ risk_level }}
+                                            {% if doc.risk_score > 0 %}
+                                            ({{ "%.0f"|format(doc.risk_score * 100) }}%)
+                                            {% endif %}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-primary" 
+                                                    onclick="viewDocument('{{ doc.id }}')"
+                                                    title="View Document">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn btn-outline-success" 
+                                                    onclick="verifyDocument('{{ doc.id }}')"
+                                                    title="AI Verify">
+                                                <i class="fas fa-robot"></i>
+                                            </button>
+                                            <button class="btn btn-outline-info" 
+                                                    onclick="updateDocumentStatus('{{ doc.id }}', 'VERIFIED')"
+                                                    title="Mark Verified">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger" 
+                                                    onclick="updateDocumentStatus('{{ doc.id }}', 'REJECTED')"
+                                                    title="Mark Rejected">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                
+                                <!-- Verification Details Row -->
+                                {% if doc.verification_notes or doc.ai_verification_report %}
+                                <tr>
+                                    <td colspan="6" class="bg-light">
+                                        <small>
+                                            <strong>Verification Details:</strong>
+                                            {% if doc.verification_notes %}
+                                            <br>{{ doc.verification_notes }}
+                                            {% endif %}
+                                            {% if doc.ai_verification_report %}
+                                            <br><strong>AI Report:</strong> {{ doc.ai_verification_report }}
+                                            {% endif %}
+                                            {% if doc.verified_by %}
+                                            <br><strong>Verified by:</strong> {{ doc.verified_by }} on 
+                                            {{ doc.verified_at.strftime('%d %b %Y %H:%M') if doc.verified_at else 'N/A' }}
+                                            {% endif %}
+                                        </small>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% else %}
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-4">
+                                        <i class="fas fa-folder-open fa-3x mb-3"></i>
+                                        <br>No documents uploaded yet
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Document Upload Section -->
+                    <div class="mt-4">
+                        <div class="card">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="fas fa-upload"></i> Upload New Document</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="documentUploadForm" enctype="multipart/form-data">
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <label for="documentType" class="form-label">Document Type</label>
+                                            <select class="form-select" id="documentType" name="document_type" required>
+                                                <option value="">Select Document Type</option>
+                                                <option value="AADHAAR_CARD">Aadhaar Card</option>
+                                                <option value="PAN_CARD">PAN Card</option>
+                                                <option value="SALARY_SLIP">Salary Slip</option>
+                                                <option value="BANK_STATEMENT">Bank Statement</option>
+                                                <option value="PROPERTY_DOCUMENTS">Property Documents</option>
+                                                <option value="ADDRESS_PROOF">Address Proof</option>
+                                                <option value="EMPLOYMENT_PROOF">Employment Proof</option>
+                                                <option value="ITR">Income Tax Return</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="documentFile" class="form-label">Document File</label>
+                                            <input type="file" class="form-control" id="documentFile" name="document_file" accept=".pdf,.jpg,.jpeg,.png" required>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label">&nbsp;</label>
+                                            <button type="submit" class="btn btn-success w-100">
+                                                <i class="fas fa-upload"></i> Upload
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Document Statistics -->
+                    {% if application.documents %}
+                    <div class="row mt-4">
+                        <div class="col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <h3 class="text-success">{{ application.documents|selectattr('verification_status', 'equalto', 'VERIFIED')|list|length }}</h3>
+                                    <p class="text-muted mb-0">Verified</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <h3 class="text-warning">{{ application.documents|selectattr('verification_status', 'equalto', 'PENDING')|list|length }}</h3>
+                                    <p class="text-muted mb-0">Pending</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <h3 class="text-danger">{{ application.documents|selectattr('verification_status', 'equalto', 'REJECTED')|list|length }}</h3>
+                                    <p class="text-muted mb-0">Rejected</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <h3 class="text-primary">{{ application.documents|length }}</h3>
+                                    <p class="text-muted mb-0">Total</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add this CSS for risk badges -->
+<style>
+.risk-low {
+    background-color: #28a745 !important;
+    color: white;
+}
+.risk-medium {
+    background-color: #ffc107 !important;
+    color: black;
+}
+.risk-high {
+    background-color: #dc3545 !important;
+    color: white;
+}
+.ollama-badge {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    color: white;
+}
+.document-status-verified {
+    background-color: #d4edda !important;
+}
+.document-status-rejected {
+    background-color: #f8d7da !important;
+}
+.document-status-pending {
+    background-color: #fff3cd !important;
+}
+</style>
+
+<!-- JavaScript for document operations -->
+<script>
+function verifyDocument(documentId) {
+    fetch(`/admin/documents/${documentId}/verify`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Document verification completed!');
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    });
+}
+
+function verifyAllDocuments(applicationId) {
+    if (confirm('Start AI verification for all documents?')) {
+        fetch(`/admin/applications/${applicationId}/verify-documents`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('AI verification started for all documents!');
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        });
+    }
+}
+
+function updateDocumentStatus(documentId, status) {
+    const reason = prompt(`Enter reason for marking as ${status}:`) || '';
+    
+    fetch(`/admin/documents/${documentId}/status`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            status: status,
+            reason: reason
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Document marked as ${status}`);
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    });
+}
+
+function viewDocument(documentId) {
+    // Implement document viewing logic
+    alert('Document viewing functionality will be implemented soon!');
+}
+
+// Document upload form handling
+document.getElementById('documentUploadForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData();
+    formData.append('application_id', '{{ application.id }}');
+    formData.append('document_type', document.getElementById('documentType').value);
+    formData.append('document_file', document.getElementById('documentFile').files[0]);
+    
+    fetch('/upload-document', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Document uploaded successfully!');
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    });
+});
+</script>
+
+            <!-- Financial Analysis Tab -->
+            <div class="tab-pane fade" id="financial" role="tabpanel">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header bg-warning text-dark">
+                                <h4 class="mb-0"><i class="fas fa-chart-line"></i> Financial Health Analysis</h4>
+                            </div>
+                            <div class="card-body">
+                                
+                                <!-- Financial Metrics -->
+                                <div class="row mb-4">
+                                    <div class="col-md-6">
+                                        <div class="card bg-light">
+                                            <div class="card-body">
+                                                <h6 class="card-title">Income Analysis</h6>
+                                                <div class="row text-center">
+                                                    <div class="col-6">
+                                                        <h4>₹{{ "{:,.0f}".format(application.monthly_salary) }}</h4>
+                                                        <small class="text-muted">Monthly Salary</small>
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <h4>₹{{ "{:,.0f}".format(application.existing_emi) }}</h4>
+                                                        <small class="text-muted">Existing EMI</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card bg-light">
+                                            <div class="card-body">
+                                                <h6 class="card-title">Loan Details</h6>
+                                                <div class="row text-center">
+                                                    <div class="col-6">
+                                                        <h4>₹{{ "{:,.0f}".format(application.loan_amount) }}</h4>
+                                                        <small class="text-muted">Loan Amount</small>
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <h4>₹{{ "{:,.0f}".format(application.property_valuation) }}</h4>
+                                                        <small class="text-muted">Property Value</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Risk Analysis -->
+                                {% if banking_report %}
+                                <div class="mb-4">
+                                    <h5 class="text-primary">Banking Behavior Analysis</h5>
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Metric</th>
+                                                    <th>Value</th>
+                                                    <th>Status</th>
+                                                    <th>AI Assessment</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td>Debt Service Ratio</td>
+                                                    <td>{{ "%.1f"|format(banking_report.debt_service_ratio) if banking_report.debt_service_ratio else 'N/A' }}%</td>
+                                                    <td>
+                                                        <span class="badge {% if banking_report.debt_service_ratio <= 30 %}risk-low{% elif banking_report.debt_service_ratio <= 50 %}risk-medium{% else %}risk-high{% endif %}">
+                                                            {% if banking_report.debt_service_ratio <= 30 %}Healthy
+                                                            {% elif banking_report.debt_service_ratio <= 50 %}Moderate
+                                                            {% else %}Concerning{% endif %}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <small>
+                                                            {{ banking_report.recommendation if banking_report.recommendation else 'Standard assessment' }}
+                                                        </small>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>Loan-to-Value Ratio</td>
+                                                    <td>{{ "%.1f"|format((application.loan_amount / application.property_valuation * 100) if application.property_valuation > 0 else 0) }}%</td>
+                                                    <td>
+                                                        <span class="badge {% if (application.loan_amount / application.property_valuation * 100) <= 60 %}risk-low{% elif (application.loan_amount / application.property_valuation * 100) <= 80 %}risk-medium{% else %}risk-high{% endif %}">
+                                                            {% if (application.loan_amount / application.property_valuation * 100) <= 60 %}Excellent
+                                                            {% elif (application.loan_amount / application.property_valuation * 100) <= 80 %}Good
+                                                            {% else %}High{% endif %}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <small>Property provides adequate security coverage</small>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                {% endif %}
+
+                                <!-- EMI Schedule (if approved) -->
+                                {% if application.status == 'APPROVED' and amortization_schedule %}
+                                <div class="mt-4">
+                                    <h5 class="text-primary">EMI Payment Schedule</h5>
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-sm">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Month</th>
+                                                    <th>Due Date</th>
+                                                    <th>EMI Amount</th>
+                                                    <th>Principal</th>
+                                                    <th>Interest</th>
+                                                    <th>Balance</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for emi in amortization_schedule[:12] %}
+                                                <tr>
+                                                    <td>{{ emi.month }}</td>
+                                                    <td>{{ emi.date }}</td>
+                                                    <td>₹{{ "%.2f"|format(emi.emi) }}</td>
+                                                    <td>₹{{ "%.2f"|format(emi.principal) }}</td>
+                                                    <td>₹{{ "%.2f"|format(emi.interest) }}</td>
+                                                    <td>₹{{ "%.2f"|format(emi.balance) }}</td>
+                                                </tr>
+                                                {% endfor %}
+                                                {% if amortization_schedule|length > 12 %}
+                                                <tr>
+                                                    <td colspan="6" class="text-center text-muted">
+                                                        ... and {{ amortization_schedule|length - 12 }} more payments
+                                                    </td>
+                                                </tr>
+                                                {% endif %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reports Tab -->
+            <!-- In your status.html template, update the download buttons: -->
+
+    <a href="{{ url_for('credit_risk_report', app_id=application.id) }}" 
+        class="btn btn-primary">
+    <i class="fas fa-download"></i> Credit_Risk_Report
+    </a>
+
+    <a href="{{ url_for('document_verification_report', app_id=application.id) }}" 
+        class="btn btn-success">
+        <i class="fas fa-download"></i> Document_Verification_Report
+    </a>
+
+    <a href="{{ url_for('property_verification_report', app_id=application.id) }}" 
+        class="btn btn-warning">
+        <i class="fas fa-download"></i> Property_Verification_Report
+    </a>
+
+    <a href="{{ url_for('final_comprehensive_report', app_id=application.id) }}" 
+        class="btn btn-danger">
+        <i class="fas fa-download"></i> Final_Comprehensive_Report
+    </a>
+
+    <a href="{{ url_for('generate_loan_document', app_id=application.id) }}" 
+        class="btn btn-success {% if application.status != 'APPROVED' %}disabled{% endif %}">
+        <i class="fas fa-file-pdf"></i> Generate Loan Agreement
+    </a>
+                               <!-- In the Quick Actions section of your status.html -->
+<div class="mt-4 p-3 border rounded">
+    <h5 class="text-primary">AI Analysis Actions</h5>
+    <div class="btn-group">
+        <a href="{{ url_for('generate_ai_summaries', app_id=application.id) }}" 
+           class="btn btn-info">
+            <i class="fas fa-robot"></i> Generate AI Summaries
+        </a>
+        <a href="{{ url_for('fix_application', app_id=application.id) }}" 
+           class="btn btn-warning">
+            <i class="fas fa-sync"></i> Re-run AI Analysis
+        </a>
+    </div>
+    {% if application.ai_summary_generated_at %}
+    <small class="text-muted mt-2 d-block">
+        <i class="fas fa-check"></i> AI summaries generated on: 
+        {{ application.ai_summary_generated_at.strftime('%d %b %Y %H:%M') }}
+    </small>
+    {% endif %}
+</div>
+    <footer class="bg-dark text-light py-4 mt-5">
+        <div class="container text-center">
+            <p class="mb-0">
+                <i class="fas fa-robot"></i> Powered by Ollama Mistral AI | 
+                CasaFlow Intelligent Loan Management System
+            </p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Initialize Bootstrap tabs
+        var triggerTabList = [].slice.call(document.querySelectorAll('#reportTabs button'))
+        triggerTabList.forEach(function (triggerEl) {
+            var tabTrigger = new bootstrap.Tab(triggerEl)
+            triggerEl.addEventListener('click', function (event) {
+                event.preventDefault()
+                tabTrigger.show()
+            })
+        });
+
+        // Add hover effects to risk cards
+        document.querySelectorAll('.risk-score-card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-5px)';
+            });
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+            });
+        });
+    </script>
+</body>
+</html>

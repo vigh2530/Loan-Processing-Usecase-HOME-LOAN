@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CasaFlow - Loan Processing Use case: HOME LOAN</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg">
+        <a class="navbar-brand" href="{{ url_for('index') }}">🏠 CasaFlow</a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav ml-auto">
+                {% if 'user_id' in session %}
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('user_logout') }}">Logout</a></li>
+                {% else %}
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('login') }}">Login / Register</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        {% block content %}{% endblock %}
+    </div>
+
+    <div class="chat-bubble" id="chatBubble">💬</div>
+    <div class="chat-window" id="chatWindow">
+        <div class="chat-header"><h5>CasaFlow Assistant</h5></div>
+        <div class="chat-body" id="chatBody">
+            <div class="chat-message bot-message"><div class="message-bubble">Hello! How can I help you today?</div></div>
+        </div>
+        <div class="chat-footer">
+            <input type="text" id="chatInput" placeholder="Type a message...">
+        </div>
+    </div>
+    
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        $(document).ready(function() {
+            $('#chatBubble').on('click', function() {
+                $('#chatWindow').toggle();
+            });
+
+            $('#chatInput').on('keypress', function(e) {
+                if (e.which === 13) { // Enter key
+                    const userInput = $(this).val();
+                    if (userInput.trim() === '') return;
+
+                    $('#chatBody').append('<div class="chat-message user-message"><div class="message-bubble">' + userInput + '</div></div>');
+                    $(this).val('');
+                    
+                    $('#chatBody').scrollTop($('#chatBody')[0].scrollHeight);
+
+                    $.ajax({
+                        url: "{{ url_for('chatbot') }}",
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({ message: userInput }),
+                        success: function(response) {
+                            $('#chatBody').append('<div class="chat-message bot-message"><div class="message-bubble">' + response.reply + '</div></div>');
+                            $('#chatBody').scrollTop($('#chatBody')[0].scrollHeight);
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

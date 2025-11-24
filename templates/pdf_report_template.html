@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Comprehensive Loan Application Report</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
+        .section { margin-bottom: 25px; }
+        .section-title { background-color: #f0f0f0; padding: 8px; font-weight: bold; border-left: 4px solid #007bff; }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f8f9fa; }
+        .risk-high { background-color: #ffebee; color: #c62828; }
+        .risk-medium { background-color: #fff3e0; color: #ef6c00; }
+        .risk-low { background-color: #e8f5e8; color: #2e7d32; }
+        .footer { margin-top: 30px; text-align: center; font-size: 12px; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Comprehensive Loan Application Report</h1>
+        <h3>Application #{{ application.id }}</h3>
+        <p>Generated on: {{ generated_date }}</p>
+    </div>
+
+    <!-- Application Details -->
+    <div class="section">
+        <div class="section-title">Application Details</div>
+        <table>
+            <tr><th>Field</th><th>Value</th></tr>
+            <tr><td>Application ID</td><td>{{ application.id }}</td></tr>
+            <tr><td>Applicant Name</td><td>{{ application.first_name }} {{ application.last_name }}</td></tr>
+            <tr><td>Email</td><td>{{ application.email }}</td></tr>
+            <tr><td>Loan Amount</td><td>₹{{ "{:,.2f}".format(application.loan_amount) }}</td></tr>
+            <tr><td>Property Valuation</td><td>₹{{ "{:,.2f}".format(application.property_valuation) }}</td></tr>
+            <tr><td>Monthly Salary</td><td>₹{{ "{:,.2f}".format(application.monthly_salary) }}</td></tr>
+            <tr><td>CIBIL Score</td><td>{{ application.cibil_score }}</td></tr>
+        </table>
+    </div>
+
+    <!-- AI Analysis -->
+    <div class="section">
+        <div class="section-title">AI Analysis & Verification</div>
+        {% if ai_analysis %}
+        <table>
+            <tr><th>Metric</th><th>Value</th><th>Status</th></tr>
+            <tr><td>Risk Score</td><td>{{ ai_analysis.get('risk_score', 'N/A') }}</td>
+                <td class="risk-{{ 'high' if ai_analysis.get('risk_score', 0) > 70 else 'medium' if ai_analysis.get('risk_score', 0) > 40 else 'low' }}">
+                    {{ 'High Risk' if ai_analysis.get('risk_score', 0) > 70 else 'Medium Risk' if ai_analysis.get('risk_score', 0) > 40 else 'Low Risk' }}
+                </td>
+            </tr>
+            <tr><td>Confidence Score</td><td>{{ ai_analysis.get('confidence_score', 'N/A') }}</td><td>-</td></tr>
+            <tr><td>Recommendation</td><td>{{ ai_analysis.get('recommendation', 'N/A') }}</td><td>-</td></tr>
+        </table>
+        {% else %}
+        <p>AI Analysis data not available</p>
+        {% endif %}
+    </div>
+
+    <!-- Document Verification -->
+    <div class="section">
+        <div class="section-title">Document Verification Status</div>
+        <table>
+            <tr><th>Document Type</th><th>Status</th><th>Risk Level</th></tr>
+            {% for doc in documents %}
+            <tr>
+                <td>{{ doc.document_type.replace('_', ' ').title() }}</td>
+                <td>{{ doc.verification_status if doc.verification_status else 'PENDING' }}</td>
+                <td class="risk-{{ 'low' if doc.risk_score and doc.risk_score <= 30 else 'medium' if doc.risk_score and doc.risk_score <= 70 else 'high' }}">
+                    {{ 'Low' if doc.risk_score and doc.risk_score <= 30 else 'Medium' if doc.risk_score and doc.risk_score <= 70 else 'High' }}
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <!-- Risk Analysis -->
+    <div class="section">
+        <div class="section-title">Risk Analysis Summary</div>
+        <table>
+            <tr><th>Risk Category</th><th>Score</th><th>Assessment</th></tr>
+            <tr>
+                <td>Overall Risk</td>
+                <td>{{ application.overall_risk_score if application.overall_risk_score else 'N/A' }}</td>
+                <td class="risk-{{ 'high' if application.overall_risk_score and application.overall_risk_score > 70 else 'medium' if application.overall_risk_score and application.overall_risk_score > 40 else 'low' }}">
+                    {{ 'High Risk' if application.overall_risk_score and application.overall_risk_score > 70 else 'Medium Risk' if application.overall_risk_score and application.overall_risk_score > 40 else 'Low Risk' }}
+                </td>
+            </tr>
+            <tr>
+                <td>Financial Risk</td>
+                <td>{{ financial_risk_score if financial_risk_score else 'N/A' }}</td>
+                <td>{{ financial_risk_level if financial_risk_level else 'N/A' }}</td>
+            </tr>
+            <tr>
+                <td>Document Risk</td>
+                <td>{{ document_risk_score if document_risk_score else 'N/A' }}</td>
+                <td>{{ document_risk_level if document_risk_level else 'N/A' }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Final Recommendation -->
+    <div class="section">
+        <div class="section-title">Final Recommendation</div>
+        <p><strong>Status:</strong> {{ application.status }}</p>
+        {% if application.interest_rate %}
+        <p><strong>Approved Interest Rate:</strong> {{ application.interest_rate }}%</p>
+        <p><strong>Loan Term:</strong> {{ application.loan_term_years }} years</p>
+        <p><strong>Monthly EMI:</strong> ₹{{ "{:,.2f}".format(application.emi_amount) if application.emi_amount else 'N/A' }}</p>
+        {% endif %}
+        {% if application.admin_review_notes %}
+        <p><strong>Admin Notes:</strong> {{ application.admin_review_notes }}</p>
+        {% endif %}
+    </div>
+
+    <div class="footer">
+        <p>This report was automatically generated by the Loan Application System</p>
+        <p>Report ID: {{ report_id }}</p>
+    </div>
+</body>
+</html>

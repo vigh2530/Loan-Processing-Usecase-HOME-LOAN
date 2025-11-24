@@ -1,0 +1,23 @@
+Applicant Details
+First Name: Rahul
+Last Name: Sharma
+Gender: Male
+Email: rahul.sharma@example.com
+Aadhar Number: 987654321098
+PAN Number: FGHIJ5678K
+Current Residential Address: Flat 1101, Pinnacle Towers, Gurugram, Haryana, 122002
+Current Residence Status: Rented
+Do you own any other properties?: Yes
+
+Financial & Employment Details
+Monthly Salary (INR): 115000
+Company Name: NextGen Analytics
+Existing EMI (if any, INR): 10000
+CIBIL Score: 810
+
+Property & Loan Details
+Loan Amount Requested (INR): 2000000
+Property Valuation (INR): 11000000
+Full Property Address (for loan): Plot 42, Sector 57, Gurugram, Haryana, 122003
+Is the property Non-Agricultural?: Yes
+Is there an existing mortgage on this property?: No

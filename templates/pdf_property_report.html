@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Property Verification Report</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
+        .header { text-align: center; border-bottom: 3px solid #2c3e50; padding-bottom: 15px; margin-bottom: 25px; }
+        .section { margin-bottom: 30px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .section-title { background-color: #2c3e50; color: white; padding: 10px; margin: -15px -15px 15px -15px; border-radius: 3px; }
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f8f9fa; font-weight: bold; }
+        .llm-summary { background-color: #e3f2fd; padding: 15px; border-left: 4px solid #2196f3; margin: 15px 0; }
+        .risk-high { background-color: #ffebee; color: #c62828; font-weight: bold; }
+        .risk-medium { background-color: #fff3e0; color: #ef6c00; }
+        .risk-low { background-color: #e8f5e8; color: #2e7d32; }
+        .verification-pass { color: #2e7d32; font-weight: bold; }
+        .verification-fail { color: #c62828; font-weight: bold; }
+        .verification-pending { color: #ef6c00; }
+        .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #666; border-top: 1px solid #ddd; padding-top: 15px; }
+        .property-details { background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 15px 0; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Property Verification Report</h1>
+        <h3>Application #{{ application.id }}</h3>
+        <p>Generated on: {{ generated_date }}</p>
+    </div>
+
+    <!-- Property Basic Information -->
+    <div class="section">
+        <div class="section-title">Property Details</div>
+        <div class="property-details">
+            <table>
+                <tr><td style="width: 30%;"><strong>Property Address:</strong></td>
+                    <td>{{ application.property_address }}</td></tr>
+                <tr><td><strong>Property Valuation:</strong></td>
+                    <td>₹{{ "{:,.2f}".format(application.property_valuation) }}</td></tr>
+                <tr><td><strong>Loan Amount Requested:</strong></td>
+                    <td>₹{{ "{:,.2f}".format(application.loan_amount) }}</td></tr>
+                <tr><td><strong>Loan-to-Value Ratio:</strong></td>
+                    <td>{{ "%.1f"|format((application.loan_amount / application.property_valuation * 100) if application.property_valuation > 0 else 0) }}%</td></tr>
+                <tr><td><strong>Property Type:</strong></td>
+                    <td>{% if application.is_non_agricultural %}Non-Agricultural{% else %}Agricultural{% endif %}</td></tr>
+                <tr><td><strong>Ownership Status:</strong></td>
+                    <td>{% if application.has_own_property %}Owned{% else %}Not Owned{% endif %}</td></tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- Property Valuation Analysis -->
+    <div class="section">
+        <div class="section-title">Valuation Analysis</div>
+        
+        <table>
+            <tr><th>Valuation Metric</th><th>Value</th><th>Assessment</th><th>Risk Level</th></tr>
+            <tr>
+                <td>Loan-to-Value Ratio</td>
+                <td>{{ "%.1f"|format(ltv_ratio) }}%</td>
+                <td>
+                    {% if ltv_ratio <= 60 %}Excellent
+                    {% elif ltv_ratio <= 75 %}Good
+                    {% elif ltv_ratio <= 85 %}Moderate
+                    {% else %}High
+                    {% endif %}
+                </td>
+                <td class="{% if ltv_ratio <= 60 %}risk-low{% elif ltv_ratio <= 75 %}risk-low{% elif ltv_ratio <= 85 %}risk-medium{% else %}risk-high{% endif %}">
+                    {% if ltv_ratio <= 60 %}Low
+                    {% elif ltv_ratio <= 75 %}Low
+                    {% elif ltv_ratio <= 85 %}Medium
+                    {% else %}High
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td>Property Coverage</td>
+                <td>{{ "%.1f"|format((application.property_valuation / application.loan_amount) if application.loan_amount > 0 else 0) }}x</td>
+                <td>
+                    {% if (application.property_valuation / application.loan_amount) >= 2.0 %}Strong
+                    {% elif (application.property_valuation / application.loan_amount) >= 1.5 %}Adequate
+                    {% else %}Marginal
+                    {% endif %}
+                </td>
+                <td class="{% if (application.property_valuation / application.loan_amount) >= 2.0 %}risk-low{% elif (application.property_valuation / application.loan_amount) >= 1.5 %}risk-low{% else %}risk-medium{% endif %}">
+                    {% if (application.property_valuation / application.loan_amount) >= 2.0 %}Low
+                    {% elif (application.property_valuation / application.loan_amount) >= 1.5 %}Low
+                    {% else %}Medium
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td>Valuation Accuracy</td>
+                <td>{{ "%.1f"|format(valuation_confidence) }}%</td>
+                <td>
+                    {% if valuation_confidence >= 90 %}High
+                    {% elif valuation_confidence >= 75 %}Moderate
+                    {% else %}Low
+                    {% endif %}
+                </td>
+                <td class="{% if valuation_confidence >= 90 %}risk-low{% elif valuation_confidence >= 75 %}risk-medium{% else %}risk-high{% endif %}">
+                    {% if valuation_confidence >= 90 %}Low
+                    {% elif valuation_confidence >= 75 %}Medium
+                    {% else %}High
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- NA Document Verification -->
+    <div class="section">
+        <div class="section-title">Non-Agricultural Declaration Verification</div>
+        
+        <table>
+            <tr><th>Verification Step</th><th>Status</th><th>Details</th><th>Risk Level</th></tr>
+            <tr>
+                <td>NA Document Presence</td>
+                <td class="{% if na_document.status == 'VERIFIED' %}verification-pass{% else %}verification-fail{% endif %}">
+                    {{ na_document.status }}
+                </td>
+                <td>{{ na_document.presence_details }}</td>
+                <td class="risk-{{ na_document.presence_risk|lower }}">{{ na_document.presence_risk }}</td>
+            </tr>
+            <tr>
+                <td>Document Validity</td>
+                <td class="{% if na_document.validity_status == 'VALID' %}verification-pass{% else %}verification-pending{% endif %}">
+                    {{ na_document.validity_status }}
+                </td>
+                <td>{{ na_document.validity_details }}</td>
+                <td class="risk-{{ na_document.validity_risk|lower }}">{{ na_document.validity_risk }}</td>
+            </tr>
+            <tr>
+                <td>Property Type Confirmation</td>
+                <td class="{% if application.is_non_agricultural %}verification-pass{% else %}verification-fail{% endif %}">
+                    {% if application.is_non_agricultural %}CONFIRMED{% else %}NOT CONFIRMED{% endif %}
+                </td>
+                <td>Property declared as {% if application.is_non_agricultural %}non-agricultural{% else %}agricultural{% endif %}</td>
+                <td class="{% if application.is_non_agricultural %}risk-low{% else %}risk-high{% endif %}">
+                    {% if application.is_non_agricultural %}Low{% else %}High{% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td>Cross-Verification</td>
+                <td class="{% if na_document.cross_verification_status == 'VERIFIED' %}verification-pass{% else %}verification-pending{% endif %}">
+                    {{ na_document.cross_verification_status }}
+                </td>
+                <td>{{ na_document.cross_verification_details }}</td>
+                <td class="risk-{{ na_document.cross_verification_risk|lower }}">{{ na_document.cross_verification_risk }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Legal and Compliance Check -->
+    <div class="section">
+        <div class="section-title">Legal & Compliance Verification</div>
+        
+        <table>
+            <tr><th>Compliance Check</th><th>Status</th><th>Requirements</th><th>Risk Level</th></tr>
+            <tr>
+                <td>Title Verification</td>
+                <td class="verification-pending">PENDING</td>
+                <td>Clear property title required</td>
+                <td class="risk-medium">Medium</td>
+            </tr>
+            <tr>
+                <td>Encumbrance Check</td>
+                <td class="verification-pending">PENDING</td>
+                <td>No existing mortgages or liens</td>
+                <td class="risk-high">High</td>
+            </tr>
+            <tr>
+                <td>Land Use Compliance</td>
+                <td class="{% if application.is_non_agricultural %}verification-pass{% else %}verification-fail{% endif %}">
+                    {% if application.is_non_agricultural %}COMPLIANT{% else %}NON-COMPLIANT{% endif %}
+                </td>
+                <td>Must be non-agricultural for loan eligibility</td>
+                <td class="{% if application.is_non_agricultural %}risk-low{% else %}risk-high{% endif %}">
+                    {% if application.is_non_agricultural %}Low{% else %}High{% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td>Construction Approval</td>
+                <td class="verification-pending">PENDING</td>
+                <td>Valid construction permits required</td>
+                <td class="risk-medium">Medium</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- LLM Property Analysis Summary -->
+    <div class="section">
+        <div class="section-title">AI Property Assessment Summary</div>
+        <div class="llm-summary">
+            <h4>🤖 AI Property Analysis:</h4>
+            <p><strong>{{ llm_summary.overall_assessment }}</strong></p>
+            <p>{{ llm_summary.detailed_analysis }}</p>
+            
+            <h5>Property Strengths:</h5>
+            <ul>
+                {% for strength in llm_summary.strengths %}
+                <li style="color: #2e7d32;">{{ strength }}</li>
+                {% endfor %}
+            </ul>
+            
+            <h5>Risk Factors:</h5>
+            <ul>
+                {% for risk in llm_summary.risk_factors %}
+                <li style="color: #ef6c00;">{{ risk }}</li>
+                {% endfor %}
+            </ul>
+            
+            <h5>Critical Requirements:</h5>
+            <ul>
+                {% for requirement in llm_summary.critical_requirements %}
+                <li style="color: #c62828;">{{ requirement }}</li>
+                {% endfor %}
+            </ul>
+            
+            <h5>Recommendations:</h5>
+            <ul>
+                {% for recommendation in llm_summary.recommendations %}
+                <li>{{ recommendation }}</li>
+                {% endfor %}
+            </ul>
+            
+            <p><strong>Property Security Score:</strong> {{ llm_summary.security_score }}/10</p>
+            <p><strong>Valuation Confidence:</strong> {{ llm_summary.valuation_confidence }}</p>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>This property verification report was generated by AI-powered analysis system</p>
+        <p>Report ID: PROP-{{ application.id }}-{{ timestamp }}</p>
+        <p>Confidential - For Internal Use Only</p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,1155 @@
+{% extends "_base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Auto-fill Section -->
+    <div class="auto-fill-section card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0"> Auto-fill from Master Document</h4>
+        </div>
+        <div class="card-body">
+            <p class="card-text">Save time by uploading a single text file with your information. The AI will automatically fill the form for you.</p>
+            
+            <div class="form-group">
+                <label for="master-file" class="form-label">Upload Master Information File (.txt)</label>
+                <div class="input-group">
+                    <input type="file" class="form-control" id="master-file" accept=".txt">
+                    <button type="button" id="auto-fill-btn" class="btn btn-success">
+                        <i class="fas fa-magic me-2"></i>Auto-fill Form
+                    </button>
+                </div>
+                <div id="file-status" class="alert mt-2" style="display: none;"></div>
+            </div>
+            
+            <div class="sample-data mt-3 p-3 bg-light rounded">
+                <h5><i class="fas fa-file-alt me-2"></i>Required documents list </h5>
+                <p class="text-muted mb-3">Create a text file with your information in this format:</p>
+                <pre class="bg-dark text-light p-3 rounded small" style="font-family: 'Courier New', monospace;">
+bank_statements
+salary_slips
+kyc_dcuments
+property_valuation_doc
+legaal clearnance 
+na verification documnet </pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- Document Checklist Section -->
+    <div class="document-checklist mb-4">
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="fas fa-clipboard-check me-2"></i>Required Documents Checklist
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-3">
+                    <i class="fas fa-info-circle text-info me-1"></i>
+                    Please check all the documents you have available. You must have all required documents to proceed with the application.
+                </p>
+                
+                <div class="alert alert-info">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    <strong>Tip:</strong> You can still proceed if you're missing some documents, but your application may be delayed or rejected.
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-check mb-3">
+                            <input class="form-check-input document-check" type="checkbox" id="bank_statements" name="documents" value="bank_statements">
+                            <label class="form-check-label fw-bold" for="bank_statements">
+                                <i class="fas fa-university text-primary me-2"></i>Bank Statements (Last 6 months)
+                            </label>
+                            <small class="text-muted d-block ms-4">Showing income and transaction history</small>
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <input class="form-check-input document-check" type="checkbox" id="salary_slips" name="documents" value="salary_slips">
+                            <label class="form-check-label fw-bold" for="salary_slips">
+                                <i class="fas fa-file-invoice-dollar text-success me-2"></i>Salary Slips (Last 3 months)
+                            </label>
+                            <small class="text-muted d-block ms-4">Proof of regular income</small>
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <input class="form-check-input document-check" type="checkbox" id="kyc_documents" name="documents" value="kyc_documents">
+                            <label class="form-check-label fw-bold" for="kyc_documents">
+                                <i class="fas fa-id-card text-info me-2"></i>KYC Documents
+                            </label>
+                            <small class="text-muted d-block ms-4">PAN Card, Aadhaar Card, Photo ID Proof</small>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="form-check mb-3">
+                            <input class="form-check-input document-check" type="checkbox" id="property_valuation" name="documents" value="property_valuation">
+                            <label class="form-check-label fw-bold" for="property_valuation">
+                                <i class="fas fa-home text-warning me-2"></i>Property Valuation Document
+                            </label>
+                            <small class="text-muted d-block ms-4">Current market value assessment</small>
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <input class="form-check-input document-check" type="checkbox" id="legal_clearance" name="documents" value="legal_clearance">
+                            <label class="form-check-label fw-bold" for="legal_clearance">
+                                <i class="fas fa-gavel text-danger me-2"></i>Legal Clearance Certificate
+                            </label>
+                            <small class="text-muted d-block ms-4">Property title and legal verification</small>
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <input class="form-check-input document-check" type="checkbox" id="na_verification" name="documents" value="na_verification">
+                            <label class="form-check-label fw-bold" for="na_verification">
+                                <i class="fas fa-file-contract text-secondary me-2"></i>Non-Agricultural Declaration
+                            </label>
+                            <small class="text-muted d-block ms-4">NA Certificate for the property</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progress and Status -->
+                <div class="mt-4 p-3 border rounded bg-light">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h6 class="mb-2">Document Readiness</h6>
+                            <div class="progress mb-2" style="height: 12px;">
+                                <div class="progress-bar" id="documentProgress" role="progressbar" style="width: 0%"></div>
+                            </div>
+                            <small class="text-muted" id="progressText">0 of 6 documents selected</small>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div id="statusMessage">
+                                <span class="badge bg-danger" id="statusBadge">
+                                    <i class="fas fa-times me-1"></i> Cannot Proceed
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Warning Message -->
+                <div class="alert alert-warning mt-3 d-none" id="warningMessage">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Warning:</strong> You are missing some required documents. Your application may be delayed or rejected if you proceed without all documents.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loan Application Form Section -->
+    <div class="application-form-section">
+        <div class="card">
+            <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="fas fa-file-contract me-2"></i>Loan Application Form</h4>
+                <span class="badge bg-warning">All fields marked with * are required</span>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info" id="formDisabledMessage">
+                    <i class="fas fa-lock me-2"></i>
+                    <strong>Form Locked:</strong> Please confirm you have all required documents above to unlock the application form.
+                </div>
+
+                <form id="loan-application" method="POST" action="/apply" enctype="multipart/form-data" style="display: none;">
+                    <!-- Applicant & Residency Details -->
+                    <div class="form-section mb-5">
+                        <h5 class="section-title border-bottom pb-2 mb-4">
+                            <i class="fas fa-user me-2"></i>APPLICANT & RESIDENCY DETAILS
+                        </h5>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="first_name" class="form-label">First Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="first_name" name="first_name" required placeholder="Enter your first name">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="last_name" class="form-label">Last Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="last_name" name="last_name" required placeholder="Enter your last name">
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Gender <span class="text-danger">*</span></label>
+                                <div class="gender-selection">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" id="male" name="gender" value="Male" required>
+                                        <label class="form-check-label" for="male">
+                                            <i class="fas fa-male me-1"></i>Male
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" id="female" name="gender" value="Female">
+                                        <label class="form-check-label" for="female">
+                                            <i class="fas fa-female me-1"></i>Female
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" id="email" name="email" required placeholder="your.email@example.com">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="aadhar_number" class="form-label">Aadhaar Number <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="aadhar_number" name="aadhar_number" required placeholder="123456789012" pattern="[0-9]{4}[0-9]{4}[0-9]{4}">
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="pan_number" class="form-label">PAN Number <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="pan_number" name="pan_number" required placeholder="ABCDE1234F" pattern="[A-Z]{5}[0-9]{4}[A-Z]{1}">
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <label for="current_address" class="form-label">Current Residential Address <span class="text-danger">*</span></label>
+                                <textarea class="form-control" id="current_address" name="current_address" rows="3" required placeholder="Enter your complete current address"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Current Residence Status <span class="text-danger">*</span></label>
+                                <div class="residence-status">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" id="rent" name="is_rented" value="True" required>
+                                        <label class="form-check-label" for="rent">
+                                            <i class="fas fa-home me-1"></i>Rent
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" id="owned" name="is_rented" value="False">
+                                        <label class="form-check-label" for="owned">
+                                            <i class="fas fa-house-user me-1"></i>Owned
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Do you own any other properties? <span class="text-danger">*</span></label>
+                                <div class="property-ownership">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" id="other_properties_yes" name="has_own_property" value="True" required>
+                                        <label class="form-check-label" for="other_properties_yes">
+                                            <i class="fas fa-check-circle me-1"></i>Yes
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" id="other_properties_no" name="has_own_property" value="False">
+                                        <label class="form-check-label" for="other_properties_no">
+                                            <i class="fas fa-times-circle me-1"></i>No
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Financial & Employment Details -->
+                    <div class="form-section mb-5">
+                        <h5 class="section-title border-bottom pb-2 mb-4">
+                            <i class="fas fa-chart-line me-2"></i>FINANCIAL & EMPLOYMENT DETAILS
+                        </h5>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="monthly_salary" class="form-label">Monthly Salary (₹) <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₹</span>
+                                    <input type="number" class="form-control" id="monthly_salary" name="monthly_salary" min="0" step="0.01" required placeholder="75000">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="company_name" class="form-label">Company Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="company_name" name="company_name" required placeholder="Your company name">
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="existing_emi" class="form-label">Existing EMI (if any, ₹)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₹</span>
+                                    <input type="number" class="form-control" id="existing_emi" name="existing_emi" min="0" step="0.01" value="0" placeholder="0">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="cibil_score" class="form-label">CIBIL Score <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="cibil_score" name="cibil_score" min="300" max="900" required placeholder="750">
+                                    <button type="button" id="check-cibil-btn" class="btn btn-outline-primary">
+                                        <i class="fas fa-sync-alt me-1"></i>Check Score
+                                    </button>
+                                </div>
+                                <small class="form-text text-muted">Score range: 300-900</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Property & Loan Details -->
+                    <div class="form-section mb-5">
+                        <h5 class="section-title border-bottom pb-2 mb-4">
+                            <i class="fas fa-building me-2"></i>PROPERTY & LOAN DETAILS
+                        </h5>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="loan_amount" class="form-label">Loan Amount Required (₹) <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₹</span>
+                                    <input type="number" class="form-control" id="loan_amount" name="loan_amount" min="0" step="0.01" required placeholder="5000000">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="property_valuation" class="form-label">Property Valuation (₹) <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₹</span>
+                                    <input type="number" class="form-control" id="property_valuation" name="property_valuation" min="0" step="0.01" required placeholder="6500000">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <label for="property_address" class="form-label">Full Property Address (for loan) <span class="text-danger">*</span></label>
+                                <textarea class="form-control" id="property_address" name="property_address" rows="3" required placeholder="Enter the complete property address for which loan is required"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Is the property Non-Agricultural? <span class="text-danger">*</span></label>
+                                <div class="property-type">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" id="non_agricultural_yes" name="is_non_agricultural" value="True" required>
+                                        <label class="form-check-label" for="non_agricultural_yes">
+                                            <i class="fas fa-check me-1"></i>Yes
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" id="non_agricultural_no" name="is_non_agricultural" value="False">
+                                        <label class="form-check-label" for="non_agricultural_no">
+                                            <i class="fas fa-times me-1"></i>No
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Is there an existing mortgage? <span class="text-danger">*</span></label>
+                                <div class="mortgage-status">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" id="mortgage_yes" name="has_existing_mortgage" value="True" required>
+                                        <label class="form-check-label" for="mortgage_yes">
+                                            <i class="fas fa-check me-1"></i>Yes
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" id="mortgage_no" name="has_existing_mortgage" value="False">
+                                        <label class="form-check-label" for="mortgage_no">
+                                            <i class="fas fa-times me-1"></i>No
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Document Uploads Section -->
+                    <div class="form-section mb-5">
+                        <h5 class="section-title border-bottom pb-2 mb-4">
+                            <i class="fas fa-file-upload me-2"></i>DOCUMENT UPLOADS
+                        </h5>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Note:</strong> Please upload clear scans/photos of the following documents. Maximum file size: 10MB each. Supported formats: PDF, JPG, JPEG, PNG.
+                        </div>
+                        
+                        <!-- Personal & Financial Documents -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0"><i class="fas fa-user-tie me-2"></i>Personal & Financial Documents</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="bank_statements" class="form-label">
+                                            <i class="fas fa-file-invoice-dollar me-1"></i>
+                                            Bank Statements (Last 6 months) <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="file" class="form-control" id="bank_statements" name="bank_statements" accept=".pdf,.jpg,.jpeg,.png" required>
+                                        <small class="form-text text-muted">Last 6 months bank statements in PDF or image format</small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="salary_slips" class="form-label">
+                                            <i class="fas fa-receipt me-1"></i>
+                                            Salary Slips (Last 3 months) <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="file" class="form-control" id="salary_slips" name="salary_slips" accept=".pdf,.jpg,.jpeg,.png" required>
+                                        <small class="form-text text-muted">Last 3 months salary slips in PDF or image format</small>
+                                    </div>
+                                </div>
+
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="kyc_docs" class="form-label">
+                                            <i class="fas fa-id-card me-1"></i>
+                                            KYC Documents (Aadhaar & PAN) <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="file" class="form-control" id="kyc_docs" name="kyc_docs" accept=".pdf,.jpg,.jpeg,.png" required>
+                                        <small class="form-text text-muted">Clear copies of Aadhaar card and PAN card</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Property Documents -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0"><i class="fas fa-home me-2"></i>Property Documents</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="property_valuation_doc" class="form-label">
+                                            <i class="fas fa-file-certificate me-1"></i>
+                                            Property Valuation Document <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="file" class="form-control" id="property_valuation_doc" name="property_valuation_doc" accept=".pdf,.jpg,.jpeg,.png" required>
+                                        <small class="form-text text-muted">Registered property valuation report from approved valuer</small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="legal_clearance" class="form-label">
+                                            <i class="fas fa-gavel me-1"></i>
+                                            Legal Clearance Certificate <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="file" class="form-control" id="legal_clearance" name="legal_clearance" accept=".pdf,.jpg,.jpeg,.png" required>
+                                        <small class="form-text text-muted">Title deed, Encumbrance certificate, and legal clearance</small>
+                                    </div>
+                                </div>
+
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="na_document" class="form-label">
+                                            <i class="fas fa-file-contract me-1"></i>
+                                            Non-Agricultural Declaration <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="file" class="form-control" id="na_document" name="na_document" accept=".pdf,.jpg,.jpeg,.png" required>
+                                        <small class="form-text text-muted">Non-agricultural declaration certificate (Form 7-12, 8-A, or equivalent)</small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="other_property_docs" class="form-label">
+                                            <i class="fas fa-file-alt me-1"></i>
+                                            Other Property Documents (Optional)
+                                        </label>
+                                        <input type="file" class="form-control" id="other_property_docs" name="other_property_docs" accept=".pdf,.jpg,.jpeg,.png" multiple>
+                                        <small class="form-text text-muted">Site plan, Building approval, NOC from society, etc.</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Document Requirements Info -->
+                        <div class="alert alert-warning">
+                            <h6><i class="fas fa-exclamation-triangle me-2"></i>Important Document Requirements:</h6>
+                            <ul class="mb-0">
+                                <li>All documents must be clear and readable</li>
+                                <li>Property documents should be in the applicant's name or with proper transfer documents</li>
+                                <li>Non-agricultural declaration is mandatory for property loan applications</li>
+                                <li>Ensure all pages of multi-page documents are uploaded</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 p-4 bg-light rounded">
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary btn-lg px-5">
+                                <i class="fas fa-paper-plane me-2"></i>Submit Application
+                            </button>
+                            <div id="submit-status" class="alert mt-3" style="display: none;"></div>
+                            <p class="text-muted mt-2 small">
+                                <i class="fas fa-shield-alt me-1"></i>Your information is secure and encrypted
+                            </p>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Proceed Button (shown when documents are checked) -->
+                <div class="text-center mt-4" id="proceedSection" style="display: none;">
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle me-2"></i>
+                        <strong>Ready to Proceed!</strong> You have confirmed availability of required documents.
+                    </div>
+                    <button type="button" class="btn btn-primary btn-lg" onclick="unlockApplicationForm()">
+                        <i class="fas fa-lock-open me-2"></i>Start Application
+                    </button>
+                    <p class="text-muted mt-2 small">
+                        You can still proceed even if you're missing some documents, but we recommend having all documents ready.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Auto-fill JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('master-file');
+    const autoFillBtn = document.getElementById('auto-fill-btn');
+    const fileStatus = document.getElementById('file-status');
+    const checkCibilBtn = document.getElementById('check-cibil-btn');
+    const loanApplicationForm = document.getElementById('loan-application');
+    const submitStatus = document.getElementById('submit-status');
+    
+    // Auto-fill button click handler
+    autoFillBtn.addEventListener('click', function() {
+        if (!fileInput.files.length) {
+            showStatus(fileStatus, 'Please select a file first.', 'danger');
+            return;
+        }
+        
+        const file = fileInput.files[0];
+        if (!file.name.endsWith('.txt')) {
+            showStatus(fileStatus, 'Please upload a text file (.txt).', 'danger');
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const content = e.target.result;
+            const formData = parseTextFile(content);
+            fillForm(formData);
+            showStatus(fileStatus, 'Form auto-filled successfully!', 'success');
+        };
+        reader.onerror = function() {
+            showStatus(fileStatus, 'Error reading file.', 'danger');
+        };
+        reader.readAsText(file);
+    });
+    
+    // Parse text file content into form data object
+    function parseTextFile(content) {
+        const data = {};
+        const lines = content.split('\n');
+        
+        lines.forEach(line => {
+            if (line.trim() === '') return;
+            
+            // Handle different label formats
+            let [key, value] = line.split(':').map(part => part.trim());
+            if (!value) return;
+            
+            // Normalize key names to match form field names
+            key = normalizeKey(key);
+            if (key) {
+                data[key] = value;
+            }
+        });
+        
+        return data;
+    }
+    
+    // Normalize different key formats to match form field names
+    function normalizeKey(key) {
+        const keyMap = {
+            // Applicant Details
+            'first name': 'first_name',
+            'last name': 'last_name',
+            'gender': 'gender',
+            'email': 'email',
+            'aadhar number': 'aadhar_number',
+            'aadhaar number': 'aadhar_number',
+            'pan number': 'pan_number',
+            'current residential address': 'current_address',
+            'current residence status': 'current_residence_status',
+            'do you own any other properties?': 'has_own_property',
+            
+            // Financial & Employment Details
+            'monthly salary': 'monthly_salary',
+            'monthly salary (inr)': 'monthly_salary',
+            'company name': 'company_name',
+            'existing emi': 'existing_emi',
+            'existing emi (if any, inr)': 'existing_emi',
+            'existing loan': 'existing_emi',
+            'cibil score': 'cibil_score',
+            
+            // Property & Loan Details
+            'loan amount required': 'loan_amount',
+            'loan amount requested': 'loan_amount',
+            'loan amount requested (inr)': 'loan_amount',
+            'property valuation': 'property_valuation',
+            'property valuation (inr)': 'property_valuation',
+            'full property address': 'property_address',
+            'full property address (for loan)': 'property_address',
+            'is the property non-agricultural?': 'is_non_agricultural',
+            'is there an existing mortgage?': 'has_existing_mortgage',
+            'is there an existing mortgage on this property?': 'has_existing_mortgage'
+        };
+        
+        const lowerKey = key.toLowerCase();
+        return keyMap[lowerKey] || null;
+    }
+    
+    // Fill form with parsed data
+    function fillForm(data) {
+        console.log('Filling form with data:', data);
+        
+        // Fill text inputs
+        if (data.first_name) document.getElementById('first_name').value = data.first_name;
+        if (data.last_name) document.getElementById('last_name').value = data.last_name;
+        if (data.email) document.getElementById('email').value = data.email;
+        if (data.aadhar_number) document.getElementById('aadhar_number').value = data.aadhar_number;
+        if (data.pan_number) document.getElementById('pan_number').value = data.pan_number;
+        if (data.current_address) document.getElementById('current_address').value = data.current_address;
+        if (data.monthly_salary) document.getElementById('monthly_salary').value = data.monthly_salary.replace(/[^0-9]/g, '');
+        if (data.company_name) document.getElementById('company_name').value = data.company_name;
+        if (data.existing_emi) document.getElementById('existing_emi').value = data.existing_emi.replace(/[^0-9]/g, '');
+        if (data.cibil_score) document.getElementById('cibil_score').value = data.cibil_score;
+        if (data.loan_amount) document.getElementById('loan_amount').value = data.loan_amount.replace(/[^0-9]/g, '');
+        if (data.property_valuation) document.getElementById('property_valuation').value = data.property_valuation.replace(/[^0-9]/g, '');
+        if (data.property_address) document.getElementById('property_address').value = data.property_address;
+        
+        // Fill radio buttons - Gender
+        if (data.gender) {
+            const genderValue = data.gender.toLowerCase();
+            if (genderValue === 'male') {
+                document.getElementById('male').checked = true;
+            } else if (genderValue === 'female') {
+                document.getElementById('female').checked = true;
+            }
+        }
+        
+        // Fill radio buttons - Residence Status
+        if (data.current_residence_status) {
+            const status = data.current_residence_status.toLowerCase();
+            if (status === 'rent' || status === 'rented') {
+                document.getElementById('rent').checked = true;
+            } else if (status === 'owned' || status === 'own') {
+                document.getElementById('owned').checked = true;
+            }
+        }
+        
+        // Fill radio buttons - Other Properties
+        if (data.has_own_property) {
+            const hasProperty = data.has_own_property.toLowerCase();
+            if (hasProperty === 'yes' || hasProperty === 'true') {
+                document.getElementById('other_properties_yes').checked = true;
+            } else if (hasProperty === 'no' || hasProperty === 'false') {
+                document.getElementById('other_properties_no').checked = true;
+            }
+        }
+        
+        // Fill radio buttons - Non Agricultural
+        if (data.is_non_agricultural) {
+            const isNonAgri = data.is_non_agricultural.toLowerCase();
+            if (isNonAgri === 'yes' || isNonAgri === 'true') {
+                document.getElementById('non_agricultural_yes').checked = true;
+            } else if (isNonAgri === 'no' || isNonAgri === 'false') {
+                document.getElementById('non_agricultural_no').checked = true;
+            }
+        }
+        
+        // Fill radio buttons - Mortgage
+        if (data.has_existing_mortgage) {
+            const hasMortgage = data.has_existing_mortgage.toLowerCase();
+            if (hasMortgage === 'yes' || hasMortgage === 'true') {
+                document.getElementById('mortgage_yes').checked = true;
+            } else if (hasMortgage === 'no' || hasMortgage === 'false') {
+                document.getElementById('mortgage_no').checked = true;
+            }
+        }
+    }
+    
+    // CIBIL Score check
+    checkCibilBtn.addEventListener('click', function() {
+        fetch('/check_cibil', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('cibil_score').value = data.cibil_score;
+            showStatus(fileStatus, `CIBIL Score generated: ${data.cibil_score}`, 'info');
+        })
+        .catch(error => {
+            showStatus(fileStatus, 'Error generating CIBIL score', 'danger');
+        });
+    });
+    
+    // Add form submission handler for AI analysis
+    loanApplicationForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Show loading state
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Analyzing...';
+        submitBtn.disabled = true;
+        
+        // Perform AI analysis before full submission
+        const formData = new FormData(this);
+        
+        fetch('/analyze-application', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                console.log('Analysis successful, showing results...');
+                // Show analysis results first
+                showAnalysisResults(data.analysis);
+            } else {
+                showStatus(submitStatus, data.error, 'danger');
+                // Reset button
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Analysis error:', error);
+            showStatus(submitStatus, 'Analysis service unavailable. Submitting application directly...', 'warning');
+            // Reset button and submit form normally after delay
+            setTimeout(() => {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+                loanApplicationForm.submit();
+            }, 2000);
+        });
+    });
+
+    // Function to show analysis results in a modal
+    function showAnalysisResults(analysis) {
+        // Create modal HTML
+        const modalHTML = `
+            <div class="modal fade" id="analysisModal" tabindex="-1" aria-labelledby="analysisModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header bg-info text-white">
+                            <h5 class="modal-title" id="analysisModalLabel">
+                                <i class="fas fa-chart-bar me-2"></i>AI Analysis Results
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <!-- Status Card -->
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <div class="card ${analysis.status === 'APPROVED' ? 'bg-success' : analysis.status === 'REJECTED' ? 'bg-danger' : 'bg-warning'} text-white">
+                                        <div class="card-body text-center">
+                                            <h5>Application Status</h5>
+                                            <h3>${analysis.status}</h3>
+                                            <p class="mb-0">Risk Level: ${analysis.risk_level}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card bg-primary text-white">
+                                        <div class="card-body text-center">
+                                            <h5>Financial Health Score</h5>
+                                            <h3>${analysis.financial_health_score}/100</h3>
+                                            <div class="progress mt-2" style="height: 20px;">
+                                                <div class="progress-bar ${analysis.financial_health_score >= 80 ? 'bg-success' : analysis.financial_health_score >= 60 ? 'bg-warning' : 'bg-danger'}" 
+                                                    style="width: ${analysis.financial_health_score}%">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Explanation -->
+                            <div class="alert alert-info">
+                                <h5><i class="fas fa-info-circle me-2"></i>Analysis Summary</h5>
+                                <p class="mb-0">${analysis.generated_explanation.replace(/\n/g, '<br>')}</p>
+                            </div>
+
+                            ${analysis.rejection_reasons && analysis.rejection_reasons.length > 0 ? `
+                            <!-- Rejection Reasons -->
+                            <div class="mb-4">
+                                <h5><i class="fas fa-exclamation-triangle me-2"></i>Areas Needing Attention</h5>
+                                ${analysis.rejection_reasons.map(reason => `
+                                <div class="card mb-2 border-danger">
+                                    <div class="card-body py-2">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <strong>${reason.factor}</strong> - ${reason.description}
+                                            </div>
+                                            <span class="badge ${reason.severity === 'Critical' ? 'bg-danger' : reason.severity === 'High' ? 'bg-warning' : 'bg-info'}">
+                                                ${reason.severity}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                `).join('')}
+                            </div>
+                            ` : ''}
+
+                            ${analysis.alternative_offers && analysis.alternative_offers.length > 0 ? `
+                            <!-- Alternative Offers -->
+                            <div class="mb-4">
+                                <h5><i class="fas fa-handshake me-2"></i>Alternative Loan Options</h5>
+                                <div class="row">
+                                    ${analysis.alternative_offers.map(offer => `
+                                    <div class="col-md-6 mb-3">
+                                        <div class="card border-primary">
+                                            <div class="card-header bg-primary text-white">
+                                                <h6 class="mb-0">${offer.type}</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <p class="mb-1"><strong>Amount:</strong> ₹${offer.amount.toLocaleString('en-IN')}</p>
+                                                ${offer.tenure ? `<p class="mb-1"><strong>Tenure:</strong> ${offer.tenure}</p>` : ''}
+                                                ${offer.emi ? `<p class="mb-1"><strong>EMI:</strong> ₹${offer.emi.toLocaleString('en-IN')}</p>` : ''}
+                                                ${offer.interest_rate ? `<p class="mb-1"><strong>Interest Rate:</strong> ${offer.interest_rate}</p>` : ''}
+                                                <p class="mb-0 text-muted"><small>${offer.reason}</small></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                            ` : ''}
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="fas fa-times me-2"></i>Cancel Application
+                            </button>
+                            <button type="button" class="btn btn-primary" id="continue-submission">
+                                <i class="fas fa-check me-2"></i>Continue with Submission
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Add modal to page
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('analysisModal'));
+        modal.show();
+        
+        // Handle continue submission
+        document.getElementById('continue-submission').addEventListener('click', function() {
+            modal.hide();
+            submitFormAfterAnalysis();
+        });
+        
+        // Reset button when modal is hidden
+        document.getElementById('analysisModal').addEventListener('hidden.bs.modal', function() {
+            const submitBtn = document.querySelector('#loan-application button[type="submit"]');
+            submitBtn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Submit Application';
+            submitBtn.disabled = false;
+        });
+    }
+
+    // Function to submit form after showing analysis
+    function submitFormAfterAnalysis() {
+        const submitBtn = document.querySelector('#loan-application button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Submitting...';
+        submitBtn.disabled = true;
+        
+        // Create a new form submission (bypass the event listener)
+        const form = document.getElementById('loan-application');
+        const formData = new FormData(form);
+        
+        // Remove the submit event listener to prevent infinite loop
+        form.removeEventListener('submit', arguments.callee);
+        
+        fetch(form.action, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            if (response.redirected) {
+                window.location.href = response.url;
+            } else {
+                return response.text().then(html => {
+                    document.open();
+                    document.write(html);
+                    document.close();
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Submission error:', error);
+            showStatus(document.getElementById('submit-status'), 'Submission failed: ' + error, 'danger');
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        });
+    }
+    
+    function showStatus(element, message, type) {
+        element.textContent = message;
+        element.className = `alert alert-${type}`;
+        element.style.display = 'block';
+        
+        if (type === 'success' || type === 'info') {
+            setTimeout(() => {
+                element.style.display = 'none';
+            }, 5000);
+        }
+    }
+});
+</script>
+
+<!-- Document Checklist JavaScript -->
+<script>
+// Required documents configuration
+const REQUIRED_DOCUMENTS = [
+    'bank_statements',
+    'salary_slips', 
+    'kyc_documents',
+    'property_valuation',
+    'legal_clearance',
+    'na_verification'
+];
+
+let selectedDocuments = [];
+
+// Initialize checklist
+document.addEventListener('DOMContentLoaded', function() {
+    // Add event listeners to all checkboxes
+    document.querySelectorAll('.document-check').forEach(checkbox => {
+        checkbox.addEventListener('change', updateDocumentStatus);
+    });
+    
+    updateDocumentStatus();
+});
+
+function updateDocumentStatus() {
+    // Get all checked documents
+    selectedDocuments = Array.from(document.querySelectorAll('.document-check:checked'))
+        .map(checkbox => checkbox.value);
+    
+    const totalDocuments = REQUIRED_DOCUMENTS.length;
+    const selectedCount = selectedDocuments.length;
+    const progressPercentage = (selectedCount / totalDocuments) * 100;
+    
+    // Update progress bar
+    const progressBar = document.getElementById('documentProgress');
+    progressBar.style.width = `${progressPercentage}%`;
+    
+    // Update progress text
+    document.getElementById('progressText').textContent = 
+        `${selectedCount} of ${totalDocuments} documents selected`;
+    
+    // Update status badge and message
+    const statusBadge = document.getElementById('statusBadge');
+    const warningMessage = document.getElementById('warningMessage');
+    const proceedSection = document.getElementById('proceedSection');
+    
+    if (selectedCount === totalDocuments) {
+        statusBadge.className = 'badge bg-success';
+        statusBadge.innerHTML = '<i class="fas fa-check me-1"></i> Ready to Proceed';
+        warningMessage.classList.add('d-none');
+        proceedSection.style.display = 'block';
+    } else if (selectedCount >= 3) {
+        statusBadge.className = 'badge bg-warning';
+        statusBadge.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i> Can Proceed';
+        warningMessage.classList.remove('d-none');
+        proceedSection.style.display = 'block';
+    } else {
+        statusBadge.className = 'badge bg-danger';
+        statusBadge.innerHTML = '<i class="fas fa-times me-1"></i> Cannot Proceed';
+        warningMessage.classList.add('d-none');
+        proceedSection.style.display = 'none';
+    }
+    
+    // Update progress bar color based on completion
+    if (progressPercentage >= 100) {
+        progressBar.className = 'progress-bar bg-success';
+    } else if (progressPercentage >= 50) {
+        progressBar.className = 'progress-bar bg-warning';
+    } else {
+        progressBar.className = 'progress-bar bg-danger';
+    }
+}
+
+function unlockApplicationForm() {
+    // Hide the disabled message and proceed section
+    document.getElementById('formDisabledMessage').style.display = 'none';
+    document.getElementById('proceedSection').style.display = 'none';
+    
+    // Show the actual form
+    document.getElementById('loan-application').style.display = 'block';
+    
+    // Scroll to form
+    document.querySelector('.application-form-section').scrollIntoView({ 
+        behavior: 'smooth' 
+    });
+}
+
+function resetForm() {
+    // Reset checkboxes
+    document.querySelectorAll('.document-check').forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    
+    // Reset form visibility
+    document.getElementById('loan-application').style.display = 'none';
+    document.getElementById('formDisabledMessage').style.display = 'block';
+    document.getElementById('proceedSection').style.display = 'none';
+    
+    // Reset progress
+    updateDocumentStatus();
+    
+    // Clear file inputs
+    document.querySelectorAll('input[type="file"]').forEach(input => {
+        input.value = '';
+    });
+}
+
+// Form submission validation
+document.getElementById('loan-application')?.addEventListener('submit', function(e) {
+    const missingUploads = [];
+    
+    // Check if required file inputs are filled
+    const requiredFiles = [
+        'bank_statements',
+        'salary_slips',
+        'kyc_docs',
+        'property_valuation_doc',
+        'legal_clearance',
+        'na_document'
+    ];
+    
+    requiredFiles.forEach(fileId => {
+        const fileInput = document.getElementById(fileId);
+        if (fileInput && !fileInput.files.length) {
+            const label = fileInput.previousElementSibling?.textContent || fileId;
+            missingUploads.push(label);
+        }
+    });
+    
+    if (missingUploads.length > 0) {
+        e.preventDefault();
+        alert(`Please upload the following documents:\n\n• ${missingUploads.join('\n• ')}`);
+    }
+});
+</script>
+
+<style>
+.section-title {
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.form-section {
+    padding: 1.5rem;
+    border: 1px solid #e9ecef;
+    border-radius: 0.5rem;
+    background: #fff;
+}
+
+.form-section:hover {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.auto-fill-section {
+    border-left: 4px solid #007bff;
+}
+
+.gender-selection .form-check-label,
+.residence-status .form-check-label,
+.property-ownership .form-check-label,
+.property-type .form-check-label,
+.mortgage-status .form-check-label {
+    padding: 0.5rem 1rem;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    transition: all 0.2s;
+}
+
+.gender-selection .form-check-input:checked + .form-check-label,
+.residence-status .form-check-input:checked + .form-check-label,
+.property-ownership .form-check-input:checked + .form-check-label,
+.property-type .form-check-input:checked + .form-check-label,
+.mortgage-status .form-check-input:checked + .form-check-label {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+.input-group-text {
+    background-color: #f8f9fa;
+    border-right: none;
+}
+
+.form-control:focus + .input-group-text {
+    border-color: #86b7fe;
+    background-color: #fff;
+}
+
+.sample-data pre {
+    font-size: 0.875rem;
+    line-height: 1.4;
+}
+
+.card-header {
+    border-bottom: none;
+}
+
+.btn-lg {
+    padding: 0.75rem 2rem;
+    font-size: 1.1rem;
+}
+
+/* Document Checklist Styles */
+.document-checklist .form-check-input:checked {
+    background-color: #198754;
+    border-color: #198754;
+}
+
+.document-checklist .form-check-label {
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.document-checklist .form-check-input:checked + .form-check-label {
+    color: #198754;
+    font-weight: bold;
+}
+
+.progress-bar {
+    transition: width 0.5s ease;
+}
+
+#formDisabledMessage {
+    border-left: 4px solid #dc3545;
+}
+
+.alert-success {
+    border-left: 4px solid #198754;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .form-section {
+        padding: 1rem;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+}
+</style>
+
+{% endblock %}

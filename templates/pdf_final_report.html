@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Final Comprehensive Loan Application Report</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
+        .header { text-align: center; border-bottom: 3px solid #2c3e50; padding-bottom: 15px; margin-bottom: 25px; }
+        .section { margin-bottom: 30px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; page-break-inside: avoid; }
+        .section-title { background-color: #2c3e50; color: white; padding: 10px; margin: -15px -15px 15px -15px; border-radius: 3px; }
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background-color: #f8f9fa; font-weight: bold; }
+        .llm-summary { background-color: #e3f2fd; padding: 20px; border-left: 4px solid #2196f3; margin: 20px 0; }
+        .risk-high { background-color: #ffebee; color: #c62828; font-weight: bold; }
+        .risk-medium { background-color: #fff3e0; color: #ef6c00; }
+        .risk-low { background-color: #e8f5e8; color: #2e7d32; }
+        .executive-summary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 8px; margin: 20px 0; }
+        .approval-badge { background-color: #4caf50; color: white; padding: 10px 20px; border-radius: 20px; display: inline-block; margin: 10px 0; }
+        .rejection-badge { background-color: #f44336; color: white; padding: 10px 20px; border-radius: 20px; display: inline-block; margin: 10px 0; }
+        .pending-badge { background-color: #ff9800; color: white; padding: 10px 20px; border-radius: 20px; display: inline-block; margin: 10px 0; }
+        .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #666; border-top: 1px solid #ddd; padding-top: 15px; }
+        .signature-area { margin-top: 50px; border-top: 1px solid #000; width: 300px; padding-top: 10px; }
+        .page-break { page-break-before: always; }
+    </style>
+</head>
+<body>
+    <!-- Executive Summary Page -->
+    <div class="header">
+        <h1>FINAL COMPREHENSIVE LOAN APPLICATION REPORT</h1>
+        <h3>Application #{{ application.id }}</h3>
+        <p>Generated on: {{ generated_date }}</p>
+    </div>
+
+    <div class="executive-summary">
+        <h2 style="color: white; text-align: center;">EXECUTIVE SUMMARY</h2>
+        
+        <div style="text-align: center; margin: 20px 0;">
+            {% if application.status == 'APPROVED' %}
+            <div class="approval-badge">
+                <h3 style="margin: 0;">✅ APPLICATION APPROVED</h3>
+            </div>
+            {% elif application.status == 'REJECTED' %}
+            <div class="rejection-badge">
+                <h3 style="margin: 0;">❌ APPLICATION REJECTED</h3>
+            </div>
+            {% else %}
+            <div class="pending-badge">
+                <h3 style="margin: 0;">⏳ APPLICATION PENDING</h3>
+            </div>
+            {% endif %}
+        </div>
+
+        <div style="display: flex; justify-content: space-around; text-align: center; margin: 30px 0;">
+            <div>
+                <h4>Loan Amount</h4>
+                <h3>₹{{ "{:,.2f}".format(application.loan_amount) }}</h3>
+            </div>
+            <div>
+                <h4>Risk Score</h4>
+                <h3>{{ "%.1f"|format(application.overall_risk_score) if application.overall_risk_score else 'N/A' }}%</h3>
+            </div>
+            <div>
+                <h4>CIBIL Score</h4>
+                <h3>{{ application.cibil_score }}</h3>
+            </div>
+            <div>
+                <h4>LTV Ratio</h4>
+                <h3>{{ "%.1f"|format(ltv_ratio) }}%</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Final LLM Executive Summary -->
+    <div class="llm-summary">
+        <h3>🤖 AI EXECUTIVE ASSESSMENT</h3>
+        <p><strong>{{ llm_summary.executive_summary }}</strong></p>
+        
+        <h4>Key Decision Factors:</h4>
+        <ul>
+            {% for factor in llm_summary.decision_factors %}
+            <li>{{ factor }}</li>
+            {% endfor %}
+        </ul>
+        
+        <h4>Critical Risk Indicators:</h4>
+        <ul>
+            {% for risk in llm_summary.critical_risks %}
+            <li style="color: #c62828;">{{ risk }}</li>
+            {% endfor %}
+        </ul>
+        
+        <h4>Strengths Identified:</h4>
+        <ul>
+            {% for strength in llm_summary.strengths %}
+            <li style="color: #2e7d32;">{{ strength }}</li>
+            {% endfor %}
+        </ul>
+        
+        <h4>Final Recommendation:</h4>
+        <p style="font-size: 18px; font-weight: bold; color: #2c3e50;">
+            {{ llm_summary.final_recommendation }}
+        </p>
+        
+        <p><strong>AI Confidence Level:</strong> {{ llm_summary.confidence_level }}</p>
+        <p><strong>Overall Application Quality Score:</strong> {{ llm_summary.quality_score }}/10</p>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- Application Details -->
+    <div class="section">
+        <div class="section-title">Application Overview</div>
+        <table>
+            <tr><th>Category</th><th>Details</th></tr>
+            <tr><td>Application ID</td><td>{{ application.id }}</td></tr>
+            <tr><td>Applicant Name</td><td>{{ application.first_name }} {{ application.last_name }}</td></tr>
+            <tr><td>Contact Information</td><td>{{ application.email }} | {{ application.mobile_number if application.mobile_number else 'N/A' }}</td></tr>
+            <tr><td>Loan Purpose</td><td>Property Loan</td></tr>
+            <tr><td>Application Date</td><td>{{ application.created_at.strftime('%d-%b-%Y') }}</td></tr>
+            <tr><td>Current Status</td><td><strong>{{ application.status }}</strong></td></tr>
+        </table>
+    </div>
+
+    <!-- Risk Assessment Summary -->
+    <div class="section">
+        <div class="section-title">Comprehensive Risk Assessment</div>
+        <table>
+            <tr><th>Risk Category</th><th>Score</th><th>Level</th><th>Assessment</th></tr>
+            <tr>
+                <td>Overall Risk</td>
+                <td>{{ "%.1f"|format(application.overall_risk_score) if application.overall_risk_score else 'N/A' }}</td>
+                <td class="{% if application.overall_risk_score <= 30 %}risk-low{% elif application.overall_risk_score <= 60 %}risk-medium{% else %}risk-high{% endif %}">
+                    {% if application.overall_risk_score <= 30 %}Low
+                    {% elif application.overall_risk_score <= 60 %}Medium
+                    {% else %}High
+                    {% endif %}
+                </td>
+                <td>{{ risk_assessment.overall }}</td>
+            </tr>
+            <tr>
+                <td>Credit Risk</td>
+                <td>{{ "%.1f"|format(credit_risk.score) }}</td>
+                <td class="risk-{{ credit_risk.level|lower }}">{{ credit_risk.level }}</td>
+                <td>{{ credit_risk.assessment }}</td>
+            </tr>
+            <tr>
+                <td>Document Risk</td>
+                <td>{{ "%.1f"|format(document_risk.score) }}</td>
+                <td class="risk-{{ document_risk.level|lower }}">{{ document_risk.level }}</td>
+                <td>{{ document_risk.assessment }}</td>
+            </tr>
+            <tr>
+                <td>Property Risk</td>
+                <td>{{ "%.1f"|format(property_risk.score) }}</td>
+                <td class="risk-{{ property_risk.level|lower }}">{{ property_risk.level }}</td>
+                <td>{{ property_risk.assessment }}</td>
+            </tr>
+            <tr>
+                <td>Fraud Risk</td>
+                <td>{{ "%.1f"|format(fraud_risk.score) }}</td>
+                <td class="risk-{{ fraud_risk.level|lower }}">{{ fraud_risk.level }}</td>
+                <td>{{ fraud_risk.assessment }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- Credit Risk Summary -->
+    <div class="section">
+        <div class="section-title">Credit Risk Analysis</div>
+        <table>
+            <tr><th>Metric</th><th>Value</th><th>Status</th></tr>
+            <tr><td>CIBIL Score</td><td>{{ application.cibil_score }}</td>
+                <td class="{% if application.cibil_score >= 750 %}risk-low{% elif application.cibil_score >= 650 %}risk-low{% elif application.cibil_score >= 550 %}risk-medium{% else %}risk-high{% endif %}">
+                    {% if application.cibil_score >= 750 %}Excellent
+                    {% elif application.cibil_score >= 650 %}Good
+                    {% elif application.cibil_score >= 550 %}Fair
+                    {% else %}Poor
+                    {% endif %}
+                </td></tr>
+            <tr><td>Debt-to-Income Ratio</td>
+                <td>{{ "%.1f"|format(debt_to_income) }}%</td>
+                <td class="{% if debt_to_income <= 30 %}risk-low{% elif debt_to_income <= 50 %}risk-medium{% else %}risk-high{% endif %}">
+                    {% if debt_to_income <= 30 %}Healthy
+                    {% elif debt_to_income <= 50 %}Moderate
+                    {% else %}High
+                    {% endif %}
+                </td></tr>
+            <tr><td>Monthly Salary</td><td>₹{{ "{:,.2f}".format(application.monthly_salary) }}</td><td>-</td></tr>
+            <tr><td>Existing EMI</td><td>₹{{ "{:,.2f}".format(application.existing_emi) }}</td><td>-</td></tr>
+        </table>
+        
+        <div style="margin-top: 15px; padding: 10px; background-color: #f8f9fa; border-radius: 5px;">
+            <h5>Credit Assessment:</h5>
+            <p>{{ credit_risk.detailed_assessment }}</p>
+        </div>
+    </div>
+
+    <!-- Document Verification Summary -->
+    <div class="section">
+        <div class="section-title">Document Verification Status</div>
+        <table>
+            <tr><th>Document Type</th><th>Status</th><th>Risk Level</th></tr>
+            {% for doc in documents %}
+            <tr>
+                <td>{{ doc.document_type }}</td>
+                <td>{{ doc.status }}</td>
+                <td class="risk-{{ doc.risk_level|lower }}">{{ doc.risk_level }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        
+        <div style="margin-top: 15px; padding: 10px; background-color: #f8f9fa; border-radius: 5px;">
+            <h5>Document Integrity:</h5>
+            <p>{{ document_risk.detailed_assessment }}</p>
+        </div>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- Property Analysis Summary -->
+    <div class="section">
+        <div class="section-title">Property Analysis</div>
+        <table>
+            <tr><th>Property Metric</th><th>Value</th><th>Assessment</th></tr>
+            <tr><td>Property Valuation</td><td>₹{{ "{:,.2f}".format(application.property_valuation) }}</td><td>-</td></tr>
+            <tr><td>Loan-to-Value Ratio</td><td>{{ "%.1f"|format(ltv_ratio) }}%</td>
+                <td class="{% if ltv_ratio <= 60 %}risk-low{% elif ltv_ratio <= 75 %}risk-low{% elif ltv_ratio <= 85 %}risk-medium{% else %}risk-high{% endif %}">
+                    {% if ltv_ratio <= 60 %}Excellent
+                    {% elif ltv_ratio <= 75 %}Good
+                    {% elif ltv_ratio <= 85 %}Moderate
+                    {% else %}High
+                    {% endif %}
+                </td></tr>
+            <tr><td>NA Document Status</td><td>{{ na_document.status }}</td>
+                <td class="{% if na_document.status == 'VERIFIED' %}risk-low{% else %}risk-high{% endif %}">
+                    {% if na_document.status == 'VERIFIED' %}Verified{% else %}Not Verified{% endif %}
+                </td></tr>
+            <tr><td>Property Type</td>
+                <td>{% if application.is_non_agricultural %}Non-Agricultural{% else %}Agricultural{% endif %}</td>
+                <td class="{% if application.is_non_agricultural %}risk-low{% else %}risk-high{% endif %}">
+                    {% if application.is_non_agricultural %}Eligible{% else %}Not Eligible{% endif %}
+                </td></tr>
+        </table>
+        
+        <div style="margin-top: 15px; padding: 10px; background-color: #f8f9fa; border-radius: 5px;">
+            <h5>Property Security Assessment:</h5>
+            <p>{{ property_risk.detailed_assessment }}</p>
+        </div>
+    </div>
+
+    <!-- Loan Terms (If Approved) -->
+    {% if application.status == 'APPROVED' %}
+    <div class="section">
+        <div class="section-title">Approved Loan Terms</div>
+        <table>
+            <tr><th>Term</th><th>Value</th></tr>
+            <tr><td>Loan Amount</td><td>₹{{ "{:,.2f}".format(application.loan_amount) }}</td></tr>
+            <tr><td>Interest Rate</td><td>{{ application.interest_rate }}% p.a.</td></tr>
+            <tr><td>Loan Tenure</td><td>{{ application.loan_term_years }} years</td></tr>
+            <tr><td>Monthly EMI</td><td>₹{{ "{:,.2f}".format(application.emi_amount) if application.emi_amount else 'N/A' }}</td></tr>
+            <tr><td>Total Interest Payable</td><td>₹{{ "{:,.2f}".format(total_interest) if total_interest else 'N/A' }}</td></tr>
+            <tr><td>Total Payment</td><td>₹{{ "{:,.2f}".format(total_payment) if total_payment else 'N/A' }}</td></tr>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- Final Recommendations -->
+    <div class="section">
+        <div class="section-title">Final Recommendations & Next Steps</div>
+        
+        <h4>Immediate Actions:</h4>
+        <ul>
+            {% for action in llm_summary.immediate_actions %}
+            <li>{{ action }}</li>
+            {% endfor %}
+        </ul>
+        
+        <h4>Monitoring Requirements:</h4>
+        <ul>
+            {% for requirement in llm_summary.monitoring_requirements %}
+            <li>{{ requirement }}</li>
+            {% endfor %}
+        </ul>
+        
+        <h4>Conditions & Covenants:</h4>
+        <ul>
+            {% for condition in llm_summary.conditions %}
+            <li>{{ condition }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Signature Area -->
+    <div style="margin-top: 50px;">
+        <div style="float: left; width: 45%;">
+            <div class="signature-area">
+                <p><strong>Loan Officer Signature</strong></p>
+            </div>
+        </div>
+        <div style="float: right; width: 45%;">
+            <div class="signature-area">
+                <p><strong>Approving Authority Signature</strong></p>
+            </div>
+        </div>
+        <div style="clear: both;"></div>
+    </div>
+
+    <div class="footer">
+        <p>This comprehensive report was generated by AI-powered loan assessment system</p>
+        <p>Report ID: FINAL-{{ application.id }}-{{ timestamp }}</p>
+        <p>Confidential - For Authorized Use Only</p>
+    </div>
+</body>
+</html>

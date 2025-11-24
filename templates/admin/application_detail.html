@@ -1,0 +1,54 @@
+{% extends "admin/_admin_base.html" %}
+
+{% block admin_content %}
+    <h2>Application Details for #{{ application.id }}</h2>
+    <div class="card">
+        </div>
+    
+    <div class="card my-4">
+        <div class="card-header"><h5>Admin Actions</h5></div>
+        <div class="card-body d-flex">
+            <form method="post" action="{{ url_for('admin.update_status', app_id=application.id) }}" class="mr-2">
+                <input type="hidden" name="status" value="APPROVED">
+                <button type="submit" class="btn btn-success">Manually Approve</button>
+            </form>
+            <form method="post" action="{{ url_for('admin.update_status', app_id=application.id) }}">
+                <input type="hidden" name="status" value="REJECTED">
+                <button type="submit" class="btn btn-danger">Manually Reject</button>
+            </form>
+        </div>
+    </div>
+    
+    {% if application.status == 'APPROVED' %}
+    <h3 class="mt-5">EMI Tracking Schedule</h3>
+    <div class="card mt-4 shadow">
+        <div class="card-header">EMI Payment History</div>
+        <div class="card-body">
+            <div style="max-height: 400px; overflow-y: auto;">
+                <table class="table table-sm table-striped">
+                    <thead>
+                        <tr><th>EMI #</th><th>Due Date</th><th>Amount Due</th><th>Status</th><th>Payment Date</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for emi in emis %}
+                        <tr>
+                            <td>{{ emi.emi_number }}</td>
+                            <td>{{ emi.due_date.strftime('%Y-%m-%d') }}</td>
+                            <td>₹{{ "{:,.2f}".format(emi.amount_due) }}</td>
+                            <td>
+                                {% if emi.status == 'PAID' %}<span class="badge badge-success">PAID</span>
+                                {% else %}<span class="badge badge-warning">DUE</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ emi.payment_date.strftime('%Y-%m-%d') if emi.payment_date else '-' }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="5" class="text-center">No EMI records found.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+{% endblock %}

@@ -1,0 +1,23 @@
+Applicant Details
+First Name: Neha
+Last Name: Kapoor
+Gender: Male
+Email: neha_kapoor@example.com
+Aadhar Number: 4942 1598 0264
+PAN Number: RLNAY3912C
+Current Residential Address: 68/68, Deol Circle, Ballia-161429
+Current Residence Status: Rented
+Do you own any other properties?: Yes
+
+Financial & Employment Details
+Monthly Salary (INR): 146168
+Company Name: Sachar and Sons
+Existing EMI (if any, INR): 8359
+CIBIL Score: 830
+
+Property & Loan Details
+Loan Amount Requested (INR): 2400263
+Property Valuation (INR): 15001449
+Full Property Address (for loan): 79, Nayar Nagar, Berhampur 972864
+Is the property Non-Agricultural?: Yes
+Is there an existing mortgage on this property?: No

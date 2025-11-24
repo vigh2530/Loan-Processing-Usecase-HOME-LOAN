@@ -1,0 +1,80 @@
+{% extends "_base.html" %}
+{% block title %}Home -Loan Processing Use Case:CasaFlow{% endblock %}
+
+{% block content %}
+<h2>Home Loan Application Form</h2>
+<p>Please fill out all the details and upload the required documents.</p>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h4><span class="badge badge-primary">AI Feature</span> Auto-fill from Master Document</h4>
+    </div>
+    <div class="card-body">
+        <p class="text-muted">Save time by uploading a single text file with your information. The AI will pre-fill the form for you.</p>
+        <div class="form-group">
+            <label for="masterDocument">Upload Master Information File (.txt)</label>
+            <input type="file" class="form-control-file" id="masterDocument" name="master_document">
+        </div>
+        <button type="button" id="autofillBtn" class="btn btn-info">Auto-fill Form</button>
+    </div>
+</div>
+
+<form method="post" enctype="multipart/form-data">
+    <h4>Applicant & Residency Details</h4>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        $('#autofillBtn').on('click', function() {
+            var fileInput = $('#masterDocument')[0];
+            if (fileInput.files.length === 0) {
+                alert('Please select a master document file first.');
+                return;
+            }
+
+            var formData = new FormData();
+            formData.append('master_document', fileInput.files[0]);
+
+            $(this).text('Processing...').prop('disabled', true);
+
+            $.ajax({
+                url: "{{ url_for('prefill_from_document') }}",
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(data) {
+                    $('input[name="first_name"]').val(data.first_name);
+                    $('input[name="last_name"]').val(data.last_name);
+                    $('input[name="email"]').val(data.email);
+                    $('input[name="aadhar_number"]').val(data.aadhar_number);
+                    $('input[name="pan_number"]').val(data.pan_number);
+                    $('input[name="current_address"]').val(data.current_address);
+                    $('input[name="monthly_salary"]').val(data.monthly_salary);
+                    $('input[name="company_name"]').val(data.company_name);
+                    $('input[name="existing_emi"]').val(data.existing_emi);
+                    $('input[name="cibil_score"]').val(data.cibil_score);
+                    $('input[name="loan_amount"]').val(data.loan_amount);
+                    $('input[name="property_valuation"]').val(data.property_valuation);
+                    $('input[name="property_address"]').val(data.property_address);
+
+                    $('input[name="gender"][value="' + data.gender + '"]').prop('checked', true);
+                    $('input[name="is_rented"][value="' + data.is_rented + '"]').prop('checked', true);
+                    $('input[name="has_own_property"][value="' + data.has_own_property + '"]').prop('checked', true);
+                    $('input[name="is_non_agricultural"][value="' + data.is_non_agricultural + '"]').prop('checked', true);
+                    $('input[name="has_existing_mortgage"][value="' + data.has_existing_mortgage + '"]').prop('checked', true);
+
+                    alert('Form has been auto-filled successfully!');
+                    $('#autofillBtn').text('Auto-fill Form').prop('disabled', false);
+                },
+                error: function() {
+                    alert('An error occurred while processing the document.');
+                    $('#autofillBtn').text('Auto-fill Form').prop('disabled', false);
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verification Report - {{ application.id }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .risk-low { color: #28a745; }
+        .risk-medium { color: #ffc107; }
+        .risk-high { color: #dc3545; }
+        .risk-very-high { color: #721c24; }
+        .verification-card { border-left: 4px solid #007bff; }
+        .risk-card { border-left: 4px solid #dc3545; }
+        .document-card { border-left: 4px solid #28a745; }
+        .flag-green { color: #28a745; }
+        .flag-red { color: #dc3545; }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Comprehensive Verification Report</h1>
+            <div>
+                <span class="badge bg-primary fs-6">Application #{{ application.id }}</span>
+                <span class="badge bg-secondary fs-6">{{ application.status }}</span>
+            </div>
+        </div>
+
+        <!-- Overall Risk Summary -->
+        <div class="card risk-card mb-4">
+            <div class="card-header bg-white">
+                <h4 class="mb-0"><i class="fas fa-chart-line"></i> Overall Risk Assessment</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h3 class="{% if application.overall_risk_score is not none %}{% if application.overall_risk_score <= 25 %}risk-low{% elif application.overall_risk_score <= 50 %}risk-medium{% elif application.overall_risk_score <= 75 %}risk-high{% else %}risk-very-high{% endif %}{% else %}risk-very-high{% endif %}">
+                            Risk Score: {% if application.overall_risk_score is not none %}{{ "%.1f"|format(application.overall_risk_score) }}/100{% else %}N/A{% endif %}
+                        </h3>
+                        <p class="fs-5">Risk Level: 
+                            <strong>
+                                {% if verification_summary and verification_summary.summary and verification_summary.summary.risk_level %}
+                                    {{ verification_summary.summary.risk_level }}
+                                {% elif application.overall_risk_score is not none %}
+                                    {% if application.overall_risk_score <= 25 %}LOW
+                                    {% elif application.overall_risk_score <= 50 %}MEDIUM
+                                    {% elif application.overall_risk_score <= 75 %}HIGH
+                                    {% else %}VERY HIGH{% endif %}
+                                {% else %}
+                                    UNKNOWN
+                                {% endif %}
+                            </strong>
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="progress" style="height: 30px;">
+                            {% if application.overall_risk_score is not none %}
+                            <div class="progress-bar 
+                                {% if application.overall_risk_score <= 25 %}bg-success
+                                {% elif application.overall_risk_score <= 50 %}bg-warning
+                                {% elif application.overall_risk_score <= 75 %}bg-danger
+                                {% else %}bg-dark{% endif %}"style="width: {{ application.overall_risk_score }}%">
+                                {{ "%.1f"|format(application.overall_risk_score) }}%
+                            </div>
+                            {% else %}
+                            <div class="progress-bar bg-secondary" style="width: 100%">
+                                N/A
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Left Column - Verification Details -->
+            <div class="col-md-8">
+                <!-- Employment Verification -->
+                <div class="card verification-card mb-4">
+                    <div class="card-header bg-white">
+                        <h5><i class="fas fa-briefcase"></i> Employment Verification</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <strong>Status:</strong> 
+                                <span class="badge {% if employment_report.employment_status == 'VERIFIED' %}bg-success{% elif employment_report.employment_status == 'VERIFIED_WITH_NOTES' %}bg-warning{% else %}bg-danger{% endif %}">
+                                    {{ employment_report.employment_status or 'PENDING' }}
+                                </span>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Risk Score:</strong> 
+                                {% if employment_report.risk_score is not none %}
+                                    {{ "%.1f"|format(employment_report.risk_score) }}/100
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        {% if employment_report.verification_details %}
+                        <h6>Verification Details:</h6>
+                        <ul>
+                            {% for key, detail in employment_report.verification_details.items() %}
+                            <li><strong>{{ key|replace('_', ' ')|title }}:</strong> 
+                                {{ detail.note }} 
+                                {% if detail.risk is defined %}
+                                    (Risk: {{ "%.1f"|format(detail.risk * 100) }}%)
+                                {% elif detail.risk_score is defined %}
+                                    (Risk: {{ "%.1f"|format(detail.risk_score) }}%)
+                                {% endif %}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+
+                        {% if employment_report.data_source %}
+                        <p><small class="text-muted">
+                            <i class="fas fa-database"></i> Data Source: {{ employment_report.data_source }}
+                            {% if employment_report.data_source_match is defined %}
+                                • Match: {% if employment_report.data_source_match %}✅ Found{% else %}❌ Not Found{% endif %}
+                            {% endif %}
+                        </small></p>
+                        {% endif %}
+
+                        {% if employment_report.green_flags %}
+                        <h6 class="flag-green"><i class="fas fa-check-circle"></i> Positive Indicators:</h6>
+                        <ul>
+                            {% for flag in employment_report.green_flags %}
+                            <li class="flag-green">{{ flag }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+
+                        {% if employment_report.red_flags %}
+                        <h6 class="flag-red"><i class="fas fa-exclamation-triangle"></i> Areas of Concern:</h6>
+                        <ul>
+                            {% for flag in employment_report.red_flags %}
+                            <li class="flag-red">{{ flag }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Document Verification -->
+                <div class="card document-card mb-4">
+                    <div class="card-header bg-white">
+                        <h5><i class="fas fa-file-alt"></i> Document Verification</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <strong>Overall Status:</strong> 
+                                <span class="badge {% if document_report.overall_status == 'VERIFIED' %}bg-success{% else %}bg-warning{% endif %}">
+                                    {{ document_report.overall_status or 'PENDING' }}
+                                </span>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Risk Score:</strong> 
+                                {% if document_report.risk_score is not none %}
+                                    {{ "%.1f"|format(document_report.risk_score) }}/100
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        {% if document_report.verified_documents %}
+                        <h6>Document Status:</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Document Type</th>
+                                        <th>Status</th>
+                                        <th>Risk Score</th>
+                                        <th>Issues</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for doc_type, doc_info in document_report.verified_documents.items() %}
+                                    <tr>
+                                        <td>{{ doc_type|replace('_', ' ')|title }}</td>
+                                        <td>
+                                            <span class="badge {% if doc_info.status == 'VERIFIED' %}bg-success{% else %}bg-warning{% endif %}">
+                                                {{ doc_info.status }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if doc_info.risk_score is not none %}
+                                                {{ "%.1f"|format(doc_info.risk_score) }}
+                                            {% else %}
+                                                N/A
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ doc_info.issue or 'None' }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <p class="text-muted">No document verification data available.</p>
+                        {% endif %}
+
+                        {% if document_report.quality_issues %}
+                        <h6 class="flag-red"><i class="fas fa-exclamation-triangle"></i> Quality Issues:</h6>
+                        <ul>
+                            {% for issue in document_report.quality_issues %}
+                            <li class="flag-red">{{ issue }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- NA Document Verification -->
+                <div class="card mb-4">
+                    <div class="card-header bg-white">
+                        <h5><i class="fas fa-landmark"></i> Non-Agricultural Document Verification</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <strong>Status:</strong> 
+                                <span class="badge {% if na_report.status == 'VERIFIED' %}bg-success{% elif na_report.status == 'NOT_REQUIRED' %}bg-info{% else %}bg-warning{% endif %}">
+                                    {{ na_report.status or 'PENDING' }}
+                                </span>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Risk Score:</strong> 
+                                {% if na_report.risk_score is not none %}
+                                    {{ "%.1f"|format(na_report.get('risk_score', 0)) }}/100
+
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        {% if na_report.verification_details %}
+                        <h6>Verification Details:</h6>
+                        <ul>
+                            {% for key, value in na_report.verification_details.items() %}
+                            <li><strong>{{ key|replace('_', ' ')|title }}:</strong> {{ value }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+
+                        {% if na_report.issues %}
+                        <h6 class="flag-red"><i class="fas fa-exclamation-triangle"></i> Issues:</h6>
+                        <ul>
+                            {% for issue in na_report.issues %}
+                            <li class="flag-red">{{ issue }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+
+                        <!-- NA Document Upload Form -->
+                        {% if na_report.status in ['MISSING', 'FAILED'] %}
+                        <div class="mt-4 p-3 bg-light rounded">
+                            <h6>Upload NA Document:</h6>
+                            <form action="{{ url_for('upload_na_document', app_id=application.id) }}" method="post" enctype="multipart/form-data">
+                                <div class="input-group">
+                                    <input type="file" class="form-control" name="na_document" accept=".pdf,.jpg,.jpeg,.png" required>
+                                    <button type="submit" class="btn btn-primary">Upload & Verify</button>
+                                </div>
+                                <small class="form-text text-muted">Accepted formats: PDF, JPG, PNG (Max 10MB)</small>
+                            </form>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - Summary & EMI Plan -->
+            <div class="col-md-4">
+                <!-- Verification Summary -->
+                <div class="card mb-4">
+                    <div class="card-header bg-white">
+                        <h5><i class="fas fa-clipboard-check"></i> Verification Summary</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if verification_summary and verification_summary.summary %}
+                        <div class="mb-3">
+                            <strong>Overall Status:</strong> 
+                            <span class="badge bg-success">{{ verification_summary.summary.overall_verification_status or 'COMPLETED' }}</span>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <strong>Risk Level:</strong> 
+                            <span class="badge {% if verification_summary.summary.risk_level == 'LOW' %}bg-success{% elif verification_summary.summary.risk_level == 'MEDIUM' %}bg-warning{% elif verification_summary.summary.risk_level == 'HIGH' %}bg-danger{% else %}bg-dark{% endif %}">
+                                {{ verification_summary.summary.risk_level or 'UNKNOWN' }}
+                            </span>
+                        </div>
+
+                        <h6>Component Status:</h6>
+                        <ul class="list-unstyled">
+                            <li>📊 Employment: {{ verification_summary.summary.employment_verification or 'PENDING' }}</li>
+                            <li>📑 Documents: {{ verification_summary.summary.document_verification or 'PENDING' }}</li>
+                            <li>🏡 NA Document: {{ verification_summary.summary.na_verification or 'PENDING' }}</li>
+                        </ul>
+                        {% else %}
+                        <p class="text-muted">Verification summary not available.</p>
+                        {% endif %}
+
+                        {% if verification_summary and verification_summary.recommendations %}
+                        <h6><i class="fas fa-lightbulb"></i> Recommendations:</h6>
+                        <ul>
+                            {% for recommendation in verification_summary.recommendations %}
+                            <li>{{ recommendation }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- EMI Plan (for approved loans) -->
+                {% if application.status == 'APPROVED' and amortization_schedule %}
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="fas fa-calendar-alt"></i> EMI Repayment Plan</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <strong>Monthly EMI:</strong> 
+                            {% if application.emi_amount is not none %}
+                                ₹{{ "%.2f"|format(application.emi_amount) }}
+                            {% else %}
+                                <span class="text-muted">N/A</span>
+                            {% endif %}
+                            <br>
+                            <strong>Total Tenure:</strong> 
+                            {% if application.loan_term_years is not none %}
+                                {{ application.loan_term_years }} years
+                            {% else %}
+                                <span class="text-muted">N/A</span>
+                            {% endif %}
+                            <br>
+                            <strong>Interest Rate:</strong> 
+                            {% if application.interest_rate is not none %}
+                                {{ application.interest_rate }}% p.a.
+                            {% else %}
+                                <span class="text-muted">N/A</span>
+                            {% endif %}
+                        </div>
+
+                        <h6>First 6 Months:</h6>
+                        <div class="table-responsive" style="max-height: 300px;">
+                            <table class="table table-sm table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Month</th>
+                                        <th>Principal</th>
+                                        <th>Interest</th>
+                                        <th>Balance</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for payment in amortization_schedule[:6] %}
+                                    <tr>
+                                        <td>{{ payment.month }}</td>
+                                        <td>₹{{ "%.2f"|format(payment.principal) }}</td>
+                                        <td>₹{{ "%.2f"|format(payment.interest) }}</td>
+                                        <td>₹{{ "%.2f"|format(payment.balance) }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="text-center">
+                            <a href="{{ url_for('generate_loan_document', app_id=application.id) }}" 
+                               class="btn btn-outline-primary btn-sm">
+                               <i class="fas fa-download"></i> Download Full Schedule
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Actions -->
+                <div class="card">
+                    <div class="card-body text-center">
+                        <a href="{{ url_for('status', app_id=application.id) }}" class="btn btn-primary mb-2">
+                            <i class="fas fa-eye"></i> View Application Status
+                        </a>
+                        <br>
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-arrow-left"></i> Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

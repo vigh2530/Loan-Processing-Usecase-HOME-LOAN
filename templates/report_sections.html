@@ -1,0 +1,399 @@
+<!-- templates/report_sections.html -->
+<!-- Reusable report components -->
+
+<!-- Executive Summary Section -->
+{% macro executive_summary(app_data, kyc_reports, risk_analysis) %}
+<div class="card report-section mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Executive Summary</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="metric-card text-center p-3 border rounded">
+                    <h3 class="metric-value text-success">{{ kyc_reports.summary.overall_kyc_status }}</h3>
+                    <p class="metric-label">KYC Status</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card text-center p-3 border rounded">
+                    <h3 class="metric-value text-{{ 'success' if risk_analysis.risk_analysis_report.risk_assessment.risk_grade == 'LOW' else 'warning' if risk_analysis.risk_analysis_report.risk_assessment.risk_grade == 'MEDIUM' else 'danger' }}">
+                        {{ risk_analysis.risk_analysis_report.risk_assessment.risk_grade }}
+                    </h3>
+                    <p class="metric-label">Risk Grade</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card text-center p-3 border rounded">
+                    <h3 class="metric-value text-info">{{ risk_analysis.risk_analysis_report.approval_probability }}%</h3>
+                    <p class="metric-label">Approval Probability</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card text-center p-3 border rounded">
+                    <h3 class="metric-value text-warning">{{ risk_analysis.existing_loan_analysis.financial_ratios.debt_to_income_ratio }}%</h3>
+                    <p class="metric-label">Debt-to-Income</p>
+                </div>
+            </div>
+        </div>
+
+        {% if risk_analysis.ai_summary.key_findings %}
+        <div class="mt-3">
+            <h6>Key Findings:</h6>
+            <ul class="list-group list-group-flush">
+                {% for finding in risk_analysis.ai_summary.key_findings %}
+                <li class="list-group-item">{{ finding }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endmacro %}
+
+<!-- KYC Report Section -->
+{% macro kyc_report_section(kyc_reports) %}
+<div class="card report-section mb-4">
+    <div class="card-header bg-info text-white">
+        <h5 class="mb-0"><i class="fas fa-user-check me-2"></i>KYC Verification Reports</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <!-- Identity Verification -->
+            <div class="col-md-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0"><i class="fas fa-id-card me-2"></i>Identity Verification</h6>
+                    </div>
+                    <div class="card-body">
+                        <span class="badge bg-{{ 'success' if kyc_reports.identity_report.status == 'VERIFIED' else 'warning' }} mb-2">
+                            {{ kyc_reports.identity_report.status }}
+                        </span>
+                        
+                        {% for check in kyc_reports.identity_report.verification_checks %}
+                        <div class="verification-check mb-2">
+                            <small class="fw-bold">{{ check.check_name }}</small>
+                            <div class="d-flex justify-content-between">
+                                <span class="badge bg-{{ 'success' if check.status == 'PASSED' else 'warning' if check.status == 'PENDING' else 'danger' }}">
+                                    {{ check.status }}
+                                </span>
+                                <span class="badge bg-{{ 'success' if check.risk_level == 'LOW' else 'warning' if check.risk_level == 'MEDIUM' else 'danger' }}">
+                                    {{ check.risk_level }}
+                                </span>
+                            </div>
+                            <small class="text-muted">{{ check.details }}</small>
+                        </div>
+                        {% endfor %}
+
+                        {% if kyc_reports.identity_report.recommendations %}
+                        <div class="mt-2">
+                            <small class="fw-bold">Recommendations:</small>
+                            <ul class="small mb-0 ps-3">
+                                {% for rec in kyc_reports.identity_report.recommendations %}
+                                <li>{{ rec }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Address Verification -->
+            <div class="col-md-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0"><i class="fas fa-home me-2"></i>Address Verification</h6>
+                    </div>
+                    <div class="card-body">
+                        <span class="badge bg-{{ 'success' if kyc_reports.address_report.status == 'VERIFIED' else 'warning' }} mb-2">
+                            {{ kyc_reports.address_report.status }}
+                        </span>
+                        
+                        {% for check in kyc_reports.address_report.verification_checks %}
+                        <div class="verification-check mb-2">
+                            <small class="fw-bold">{{ check.check_name }}</small>
+                            <div class="d-flex justify-content-between">
+                                <span class="badge bg-{{ 'success' if check.status == 'PASSED' else 'warning' if check.status == 'PENDING' else 'danger' }}">
+                                    {{ check.status }}
+                                </span>
+                                <span class="badge bg-{{ 'success' if check.risk_level == 'LOW' else 'warning' if check.risk_level == 'MEDIUM' else 'danger' }}">
+                                    {{ check.risk_level }}
+                                </span>
+                            </div>
+                            <small class="text-muted">{{ check.details }}</small>
+                        </div>
+                        {% endfor %}
+
+                        {% if kyc_reports.address_report.recommendations %}
+                        <div class="mt-2">
+                            <small class="fw-bold">Recommendations:</small>
+                            <ul class="small mb-0 ps-3">
+                                {% for rec in kyc_reports.address_report.recommendations %}
+                                <li>{{ rec }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Financial Verification -->
+            <div class="col-md-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0"><i class="fas fa-money-bill-wave me-2"></i>Financial Verification</h6>
+                    </div>
+                    <div class="card-body">
+                        <span class="badge bg-{{ 'success' if kyc_reports.financial_report.status == 'VERIFIED' else 'warning' }} mb-2">
+                            {{ kyc_reports.financial_report.status }}
+                        </span>
+                        
+                        {% for check in kyc_reports.financial_report.verification_checks %}
+                        <div class="verification-check mb-2">
+                            <small class="fw-bold">{{ check.check_name }}</small>
+                            <div class="d-flex justify-content-between">
+                                <span class="badge bg-{{ 'success' if check.status == 'PASSED' else 'warning' if check.status == 'PENDING' else 'danger' }}">
+                                    {{ check.status }}
+                                </span>
+                                <span class="badge bg-{{ 'success' if check.risk_level == 'LOW' else 'warning' if check.risk_level == 'MEDIUM' else 'danger' }}">
+                                    {{ check.risk_level }}
+                                </span>
+                            </div>
+                            <small class="text-muted">{{ check.details }}</small>
+                        </div>
+                        {% endfor %}
+
+                        {% if kyc_reports.financial_report.recommendations %}
+                        <div class="mt-2">
+                            <small class="fw-bold">Recommendations:</small>
+                            <ul class="small mb-0 ps-3">
+                                {% for rec in kyc_reports.financial_report.recommendations %}
+                                <li>{{ rec }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+<!-- Risk Analysis Section -->
+{% macro risk_analysis_section(risk_analysis) %}
+<div class="card report-section mb-4">
+    <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0"><i class="fas fa-shield-alt me-2"></i>Risk Analysis</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">Risk Assessment</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="risk-score text-center mb-3">
+                            <div class="score-circle mx-auto d-flex align-items-center justify-content-center 
+                                {{ 'low-risk' if risk_analysis.risk_analysis_report.risk_assessment.risk_score <= 30 
+                                else 'medium-risk' if risk_analysis.risk_analysis_report.risk_assessment.risk_score <= 60 
+                                else 'high-risk' }}"style="width: 120px; height: 120px; border-radius: 50%; border: 8px solid; 
+                                border-color: {{ '#28a745' if risk_analysis.risk_analysis_report.risk_assessment.risk_score <= 30 
+                                else '#ffc107' if risk_analysis.risk_analysis_report.risk_assessment.risk_score <= 60 
+                                else '#dc3545' }};">
+                                <div class="text-center">
+                                    <h3 class="mb-0 fw-bold">{{ risk_analysis.risk_analysis_report.risk_assessment.risk_score }}</h3>
+                                    <small>/100</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="risk-details">
+                            <p><strong>Risk Grade:</strong> 
+                                <span class="badge bg-{{ 'success' if risk_analysis.risk_analysis_report.risk_assessment.risk_grade == 'LOW' 
+                                else 'warning' if risk_analysis.risk_analysis_report.risk_assessment.risk_grade == 'MEDIUM' 
+                                else 'danger' }}">
+                                    {{ risk_analysis.risk_analysis_report.risk_assessment.risk_grade }}
+                                </span>
+                            </p>
+                            <p><strong>Approval Probability:</strong> 
+                                <span class="fw-bold text-{{ 'success' if risk_analysis.risk_analysis_report.approval_probability >= 70 
+                                else 'warning' if risk_analysis.risk_analysis_report.approval_probability >= 50 
+                                else 'danger' }}">
+                                    {{ risk_analysis.risk_analysis_report.approval_probability }}%
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">Financial Ratios</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="ratio-item mb-3">
+                            <div class="d-flex justify-content-between">
+                                <span>Debt-to-Income Ratio:</span>
+                                <span class="fw-bold text-{{ 'success' if risk_analysis.existing_loan_analysis.financial_ratios.debt_to_income_ratio <= 30 
+                                else 'warning' if risk_analysis.existing_loan_analysis.financial_ratios.debt_to_income_ratio <= 50 
+                                else 'danger' }}">
+                                    {{ risk_analysis.existing_loan_analysis.financial_ratios.debt_to_income_ratio }}%
+                                </span>
+                            </div>
+                            <div class="progress mt-1" style="height: 8px;">
+                                <div class="progress-bar bg-{{ 'success' if risk_analysis.existing_loan_analysis.financial_ratios.debt_to_income_ratio <= 30 
+                                else 'warning' if risk_analysis.existing_loan_analysis.financial_ratios.debt_to_income_ratio <= 50 
+                                else 'danger' }}"style="width: {{ [risk_analysis.existing_loan_analysis.financial_ratios.debt_to_income_ratio, 100]|min }}%"></div>
+                            </div>
+                            <small class="text-muted">Safe threshold: {{ risk_analysis.existing_loan_analysis.financial_ratios.safe_threshold }}%</small>
+                        </div>
+
+                        <div class="ratio-item mb-3">
+                            <div class="d-flex justify-content-between">
+                                <span>Affordability Ratio:</span>
+                                <span class="fw-bold text-{{ 'success' if risk_analysis.existing_loan_analysis.financial_ratios.affordability_ratio >= 60 
+                                else 'warning' if risk_analysis.existing_loan_analysis.financial_ratios.affordability_ratio >= 40 
+                                else 'danger' }}">
+                                    {{ risk_analysis.existing_loan_analysis.financial_ratios.affordability_ratio }}%
+                                </span>
+                            </div>
+                            <div class="progress mt-1" style="height: 8px;">
+                                <div class="progress-bar bg-{{ 'success' if risk_analysis.existing_loan_analysis.financial_ratios.affordability_ratio >= 60 
+                                else 'warning' if risk_analysis.existing_loan_analysis.financial_ratios.affordability_ratio >= 40 
+                                else 'danger' }}"style="width: {{ risk_analysis.existing_loan_analysis.financial_ratios.affordability_ratio }}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if risk_analysis.risk_analysis_report.mitigation_recommendations %}
+        <div class="mt-3">
+            <h6>Risk Mitigation Recommendations:</h6>
+            <div class="alert alert-warning">
+                <ul class="mb-0">
+                    {% for recommendation in risk_analysis.risk_analysis_report.mitigation_recommendations %}
+                    <li>{{ recommendation }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endmacro %}
+
+<!-- EMI Plan Section -->
+{% macro emi_plan_section(app_data) %}
+<div class="card report-section mb-4">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>EMI Payment Plan</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="metric-card text-center p-3 border rounded bg-light">
+                    <h3 class="metric-value text-primary">₹{{ "%.2f"|format(app_data.monthly_emi) }}</h3>
+                    <p class="metric-label">Monthly EMI</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card text-center p-3 border rounded bg-light">
+                    <h3 class="metric-value text-info">{{ app_data.loan_term_months }}</h3>
+                    <p class="metric-label">Total Months</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card text-center p-3 border rounded bg-light">
+                    <h3 class="metric-value text-success">₹{{ "%.2f"|format(app_data.total_payment) }}</h3>
+                    <p class="metric-label">Total Payment</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card text-center p-3 border rounded bg-light">
+                    <h3 class="metric-value text-warning">₹{{ "%.2f"|format(app_data.total_interest) }}</h3>
+                    <p class="metric-label">Total Interest</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <h6>Loan Details:</h6>
+                <table class="table table-sm">
+                    <tr>
+                        <td>Loan Amount:</td>
+                        <td class="fw-bold">₹{{ "%.2f"|format(app_data.loan_amount) }}</td>
+                    </tr>
+                    <tr>
+                        <td>Interest Rate:</td>
+                        <td class="fw-bold">{{ app_data.interest_rate }}% p.a.</td>
+                    </tr>
+                    <tr>
+                        <td>Loan Term:</td>
+                        <td class="fw-bold">{{ app_data.loan_term_years }} years</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h6>Payment Summary:</h6>
+                <table class="table table-sm">
+                    <tr>
+                        <td>Principal Amount:</td>
+                        <td class="fw-bold">₹{{ "%.2f"|format(app_data.loan_amount) }}</td>
+                    </tr>
+                    <tr>
+                        <td>Total Interest:</td>
+                        <td class="fw-bold">₹{{ "%.2f"|format(app_data.total_interest) }}</td>
+                    </tr>
+                    <tr>
+                        <td>Total Payment:</td>
+                        <td class="fw-bold text-success">₹{{ "%.2f"|format(app_data.total_payment) }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+<!-- Recommendations Section -->
+{% macro recommendations_section(recommendations) %}
+<div class="card report-section mb-4">
+    <div class="card-header bg-dark text-white">
+        <h5 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Recommendations & Next Steps</h5>
+    </div>
+    <div class="card-body">
+        {% if recommendations %}
+        <div class="row">
+            {% for category, rec_list in recommendations.items() %}
+            <div class="col-md-6 mb-3">
+                <h6 class="text-capitalize">{{ category.replace('_', ' ') }}:</h6>
+                <ul class="list-group">
+                    {% for recommendation in rec_list %}
+                    <li class="list-group-item d-flex align-items-center">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        {{ recommendation }}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="alert alert-success">
+            <i class="fas fa-thumbs-up me-2"></i>
+            No specific recommendations at this time. Application appears satisfactory.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endmacro %}
